@@ -3,10 +3,14 @@ package com.example.todoapp.ui.fragment.notelist
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.core.view.MenuProvider
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
@@ -40,10 +44,28 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        setupToolbarMenu()
+
         noteListViewModel.onStart(requireContext())
 
         listAdapter = ListAdapter(noteList,this)
 
+        setupAdaptiveLayout()
+
+        binding?.recyclerView?.adapter = listAdapter
+
+        noteListViewModel.notes.observe(viewLifecycleOwner){ notes ->
+            listAdapter.updateContactList(notes)
+        }
+
+        database = AppDatabase.getDatabase(requireContext())
+
+        binding?.addButton?.setOnClickListener {
+            findNavController().navigate(R.id.navigate_listFragment_to_noteFragment)
+        }
+    }
+
+    private fun setupAdaptiveLayout(){
         val windowSizeClass = computeWindowSizeClasses()
 
         val spanCount = when (windowSizeClass) {
@@ -56,17 +78,19 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
         }
 
         binding?.recyclerView?.layoutManager = GridLayoutManager(requireContext(), spanCount)
-        binding?.recyclerView?.adapter = listAdapter
+    }
 
-        noteListViewModel.notes.observe(viewLifecycleOwner){ notes ->
-            listAdapter.updateContactList(notes)
-        }
+    private fun setupToolbarMenu(){
+        requireActivity().addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                menuInflater.inflate(R.menu.toolbar_menu_listfragment,menu)
+            }
 
-        database = AppDatabase.getDatabase(requireContext())
+            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
 
-        binding?.addButton?.setOnClickListener {
-            findNavController().navigate(R.id.navigate_listFragment_to_noteFragment)
-        }
+                return true
+            }
+        }, viewLifecycleOwner)
     }
 
     private fun computeWindowSizeClasses(): WindowWidthSizeClass {

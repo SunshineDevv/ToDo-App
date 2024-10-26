@@ -7,7 +7,6 @@
     tools:context=".ui.fragment.notelist.ListFragment"
     android:background="@color/black">
 
-
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"

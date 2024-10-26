@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/other_parametrs"
+        android:icon="@drawable/baseline_more_vert_24"
+        android:title="Other parametrs"
+        app:showAsAction="always">
+        <menu>
+            <item
+                android:id="@+id/change_mode"
+                android:title="Change appearance mode"
+                app:showAsAction="collapseActionView">
+            </item>
+        </menu>
+    </item>
+
+</menu>
