@@ -12,6 +12,7 @@ import androidx.navigation.fragment.navArgs
 import com.example.todoapp.R
 import com.example.todoapp.databinding.FragmentUpdateNoteBinding
 import com.example.todoapp.extensions.toFormattedDate
+import com.example.todoapp.ui.fragment.State
 
 class UpdateNoteFragment : Fragment() {
 
@@ -34,6 +35,8 @@ class UpdateNoteFragment : Fragment() {
 
         updateNoteViewModel.onStart(requireContext())
 
+        initObservers()
+
         val idNote = args.idNote
         val nameNote = args.nameNote
         val textNote = args.textNote
@@ -53,7 +56,6 @@ class UpdateNoteFragment : Fragment() {
                 dateUpdateNote
             )
 
-            Toast.makeText(requireContext(), "Note was updated!", Toast.LENGTH_LONG).show()
             findNavController().navigate(R.id.navigate_updateNoteFragment_to_listFragment)
         }
 
@@ -62,6 +64,21 @@ class UpdateNoteFragment : Fragment() {
     private fun setExistingData(nameNote: String, textNote: String) {
         binding?.nameEditText?.setText(nameNote)
         binding?.textNoteEditText?.setText(textNote)
+    }
+
+    private fun initObservers() {
+        updateNoteViewModel.state.observe(viewLifecycleOwner) { state ->
+            when(state){
+                is State.Success -> {
+                    Toast.makeText(requireContext(), state.successMsg, Toast.LENGTH_LONG).show()
+                    updateNoteViewModel.clearState()
+                }
+                is State.Error -> {
+
+                }
+                else -> { }
+            }
+        }
     }
 
 }

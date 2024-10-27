@@ -21,6 +21,7 @@ import com.example.todoapp.R
 import com.example.todoapp.database.AppDatabase
 import com.example.todoapp.databinding.FragmentListBinding
 import com.example.todoapp.ui.adapter.notelist.ListAdapter
+import com.example.todoapp.ui.fragment.State
 
 class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
 
@@ -48,6 +49,8 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
         setupToolbarMenu()
 
         noteListViewModel.onStart(requireContext())
+
+        initObservers()
 
         listAdapter = ListAdapter(noteList, this)
 
@@ -114,7 +117,6 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
 
     override fun onLongClickedItem(note: NoteModel) {
         noteListViewModel.deleteNote(note)
-        Toast.makeText(requireContext(), "Note was deleted!", Toast.LENGTH_LONG).show()
     }
 
     override fun onClickedItem(note: NoteModel) {
@@ -129,5 +131,20 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
             dateCrateNote
         )
         view?.let { Navigation.findNavController(it).navigate(action) }
+    }
+
+    private fun initObservers() {
+        noteListViewModel.state.observe(viewLifecycleOwner) { state ->
+            when(state){
+                is State.Success -> {
+                    Toast.makeText(requireContext(), state.successMsg, Toast.LENGTH_LONG).show()
+                    noteListViewModel.clearState()
+                }
+                is State.Error -> {
+
+                }
+                else -> { }
+            }
+        }
     }
 }

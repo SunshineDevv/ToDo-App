@@ -11,6 +11,7 @@ import com.example.todoapp.database.repository.NoteRepository
 import com.example.todoapp.extensions.observeLiveData
 import com.example.todoapp.extensions.toNoteDbModel
 import com.example.todoapp.extensions.toNoteModelList
+import com.example.todoapp.ui.fragment.State
 import com.example.todoapp.ui.fragment.note.NoteModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -21,6 +22,9 @@ class NoteListViewModel : ViewModel() {
 
     private val _notes = MutableLiveData<List<NoteModel>>(emptyList())
     val notes: LiveData<List<NoteModel>> = _notes
+
+    private val _state = MutableLiveData<State>()
+    val state: LiveData<State> = _state
 
     fun onStart(context: Context) {
         val contactDao = AppDatabase.getDatabase(context).getNoteDao()
@@ -39,5 +43,10 @@ class NoteListViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             repository.delete(contact.toNoteDbModel())
         }
+        _state.postValue(State.Success("Note was deleted!"))
+    }
+
+    fun clearState() {
+        _state.value = State.Empty
     }
 }

@@ -14,6 +14,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import com.example.todoapp.R
 import com.example.todoapp.databinding.FragmentNoteBinding
+import com.example.todoapp.ui.fragment.State
 
 
 class NoteFragment : Fragment() {
@@ -37,6 +38,8 @@ class NoteFragment : Fragment() {
 
         noteViewModel.onStart(requireContext())
 
+        initObservers()
+
         binding?.addNewNoteButton?.setOnClickListener {
             val dateCreateNote = System.currentTimeMillis()
 
@@ -44,7 +47,6 @@ class NoteFragment : Fragment() {
             val textNote = binding?.textNoteEditText?.text.toString()
 
             noteViewModel.addNote(nameNote, textNote, dateCreateNote, 0)
-            Toast.makeText(requireContext(), "New note was added!", Toast.LENGTH_LONG).show()
             findNavController().navigate(R.id.navigate_noteFragment_to_listFragment)
         }
     }
@@ -60,5 +62,20 @@ class NoteFragment : Fragment() {
                 return true
             }
         }, viewLifecycleOwner)
+    }
+
+    private fun initObservers() {
+        noteViewModel.state.observe(viewLifecycleOwner) { state ->
+            when(state){
+                is State.Success -> {
+                    Toast.makeText(requireContext(), state.successMsg, Toast.LENGTH_LONG).show()
+                    noteViewModel.clearState()
+                }
+                is State.Error -> {
+
+                }
+                else -> { }
+            }
+        }
     }
 }
