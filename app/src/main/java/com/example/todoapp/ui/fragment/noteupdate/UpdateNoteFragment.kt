@@ -6,7 +6,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.fragment.app.activityViewModels
+import androidx.databinding.DataBindingUtil
+import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.todoapp.R
@@ -20,13 +21,16 @@ class UpdateNoteFragment : Fragment() {
 
     private val args: UpdateNoteFragmentArgs by navArgs()
 
-    private val updateNoteViewModel: UpdateNoteViewModel by activityViewModels()
+    private val updateNoteViewModel: UpdateNoteViewModel by viewModels()
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        binding = FragmentUpdateNoteBinding.inflate(inflater, container, false)
+        binding = DataBindingUtil.inflate(inflater,R.layout.fragment_update_note,container,false)
+        binding?.viewmodel = updateNoteViewModel
+        binding?.lifecycleOwner = viewLifecycleOwner
         return binding?.root
     }
 
@@ -41,7 +45,12 @@ class UpdateNoteFragment : Fragment() {
         val nameNote = args.nameNote
         val textNote = args.textNote
         val dateCreateNote = args.dateCrateNote
-        setExistingData(nameNote, textNote)
+
+        if (updateNoteViewModel.nameNote.value.isNullOrEmpty() &&
+            updateNoteViewModel.textNote.value.isNullOrEmpty()
+        ) {
+            setExistingData(nameNote, textNote)
+        }
 
         binding?.updateNoteButton?.setOnClickListener {
             val newNameNote = binding?.nameEditText?.text.toString()
@@ -58,12 +67,11 @@ class UpdateNoteFragment : Fragment() {
 
             findNavController().navigate(R.id.navigate_updateNoteFragment_to_listFragment)
         }
-
     }
 
     private fun setExistingData(nameNote: String, textNote: String) {
-        binding?.nameEditText?.setText(nameNote)
-        binding?.textNoteEditText?.setText(textNote)
+        updateNoteViewModel.nameNote.value = nameNote
+        updateNoteViewModel.textNote.value = textNote
     }
 
     private fun initObservers() {

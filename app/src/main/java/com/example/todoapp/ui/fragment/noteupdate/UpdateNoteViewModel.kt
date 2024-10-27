@@ -15,6 +15,9 @@ import kotlinx.coroutines.launch
 
 class UpdateNoteViewModel : ViewModel() {
 
+    val nameNote = MutableLiveData<String>()
+    val textNote = MutableLiveData<String>()
+
     private lateinit var repository: NoteRepository
 
     private val _state = MutableLiveData<State>()
@@ -49,5 +52,4 @@ class UpdateNoteViewModel : ViewModel() {
     fun clearState() {
         _state.value = State.Empty
     }
-
 }

@@ -14,6 +14,9 @@ import kotlinx.coroutines.launch
 
 class NoteViewModel : ViewModel() {
 
+    val nameNote = MutableLiveData<String>()
+    val textNote = MutableLiveData<String>()
+
     private lateinit var repository: NoteRepository
 
     private val _state = MutableLiveData<State>()

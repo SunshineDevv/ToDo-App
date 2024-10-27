@@ -10,7 +10,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.view.MenuProvider
-import androidx.fragment.app.activityViewModels
+import androidx.databinding.DataBindingUtil
+import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.example.todoapp.R
 import com.example.todoapp.databinding.FragmentNoteBinding
@@ -21,25 +22,26 @@ class NoteFragment : Fragment() {
 
     private var binding: FragmentNoteBinding? = null
 
-    private val noteViewModel: NoteViewModel by activityViewModels()
+    private val noteViewModel: NoteViewModel by viewModels()
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
+        inflater: LayoutInflater,
+        container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        binding = FragmentNoteBinding.inflate(inflater, container, false)
+        binding = DataBindingUtil.inflate(inflater,R.layout.fragment_note,container,false)
+        binding?.viewmodel = noteViewModel
+        binding?.lifecycleOwner = viewLifecycleOwner
         return binding?.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         setupToolbarMenu()
 
         noteViewModel.onStart(requireContext())
 
         initObservers()
-
         binding?.addNewNoteButton?.setOnClickListener {
             val dateCreateNote = System.currentTimeMillis()
 
