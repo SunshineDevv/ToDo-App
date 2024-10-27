@@ -1,4 +1,4 @@
-package com.example.todoapp.ui.fragment.noteaction
+package com.example.todoapp.ui.fragment.note
 
 import android.content.Context
 import androidx.lifecycle.ViewModel

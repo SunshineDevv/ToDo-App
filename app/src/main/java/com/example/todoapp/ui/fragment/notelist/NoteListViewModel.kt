@@ -11,7 +11,7 @@ import com.example.todoapp.database.repository.NoteRepository
 import com.example.todoapp.extensions.observeLiveData
 import com.example.todoapp.extensions.toNoteDbModel
 import com.example.todoapp.extensions.toNoteModelList
-import com.example.todoapp.ui.fragment.noteaction.NoteModel
+import com.example.todoapp.ui.fragment.note.NoteModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -25,7 +25,7 @@ class NoteListViewModel : ViewModel() {
     fun onStart(context: Context) {
         val contactDao = AppDatabase.getDatabase(context).getNoteDao()
         repository = NoteRepository(contactDao)
-        observeLiveData(repository.allNotes,::handleNotesChanged)
+        observeLiveData(repository.allNotes, ::handleNotesChanged)
     }
 
     private fun handleNotesChanged(noteDbs: List<NoteDb>) {
@@ -33,7 +33,7 @@ class NoteListViewModel : ViewModel() {
             it.dateUpdate ?: it.dateCreate
         }.toNoteModelList()
         _notes.postValue(sortedList)
-   }
+    }
 
     fun deleteNote(contact: NoteModel) {
         viewModelScope.launch(Dispatchers.IO) {

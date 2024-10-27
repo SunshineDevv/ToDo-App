@@ -47,7 +47,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun updateToolbars(destination: NavDestination){
+    private fun updateToolbars(destination: NavDestination) {
         when (destination.id) {
             R.id.noteFragment -> {
                 (supportActionBar)?.apply {
@@ -56,6 +56,7 @@ class MainActivity : AppCompatActivity() {
                     setHomeButtonEnabled(true)
                 }
             }
+
             else -> {
                 (supportActionBar)?.apply {
                     title = "ToDoApp"

@@ -4,14 +4,14 @@ import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.example.todoapp.ui.fragment.noteaction.NoteModel
+import com.example.todoapp.ui.fragment.note.NoteModel
 import com.example.todoapp.databinding.ItemNoteBinding
-import com.example.todoapp.extensions.toDateInMillis
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
-class ListAdapter(private var noteList: List<NoteModel>, private val itemClickedListener: RecyclerItemClicked, ): RecyclerView.Adapter<ListAdapter.ListViewHolder>() {
+class ListAdapter(
+    private var noteList: List<NoteModel>,
+    private val itemClickedListener: RecyclerItemClicked,
+) :
+    RecyclerView.Adapter<ListAdapter.ListViewHolder>() {
 
     class ListViewHolder(val binding: ItemNoteBinding) :
         RecyclerView.ViewHolder(binding.root)
@@ -38,9 +38,13 @@ class ListAdapter(private var noteList: List<NoteModel>, private val itemClicked
         holder.binding.dateCreateNote.text = dateCreateNote
         holder.binding.dateUpdateNote.text = dateUpdateNote
 
-        holder.itemView.setOnLongClickListener{
+        holder.itemView.setOnLongClickListener {
             itemClickedListener.onLongClickedItem(note)
             true
+        }
+
+        holder.itemView.setOnClickListener {
+            itemClickedListener.onClickedItem(note)
         }
     }
 
@@ -52,5 +56,6 @@ class ListAdapter(private var noteList: List<NoteModel>, private val itemClicked
 
     interface RecyclerItemClicked {
         fun onLongClickedItem(note: NoteModel)
+        fun onClickedItem(note: NoteModel)
     }
 }

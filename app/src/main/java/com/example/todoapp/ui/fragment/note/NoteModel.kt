@@ -1,4 +1,4 @@
-package com.example.todoapp.ui.fragment.noteaction
+package com.example.todoapp.ui.fragment.note
 
 data class NoteModel(
     val id: Long,

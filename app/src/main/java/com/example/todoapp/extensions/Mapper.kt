@@ -1,7 +1,7 @@
 package com.example.todoapp.extensions
 
 import com.example.todoapp.database.model.NoteDb
-import com.example.todoapp.ui.fragment.noteaction.NoteModel
+import com.example.todoapp.ui.fragment.note.NoteModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

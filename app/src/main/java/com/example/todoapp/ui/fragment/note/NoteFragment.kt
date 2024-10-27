@@ -1,4 +1,4 @@
-package com.example.todoapp.ui.fragment.noteaction
+package com.example.todoapp.ui.fragment.note
 
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -44,15 +44,15 @@ class NoteFragment : Fragment() {
             val textNote = binding?.textNoteEditText?.text.toString()
 
             noteViewModel.addNote(nameNote, textNote, dateCreateNote, 0)
-            Toast.makeText(requireContext(),"New note was added!", Toast.LENGTH_LONG).show()
+            Toast.makeText(requireContext(), "New note was added!", Toast.LENGTH_LONG).show()
             findNavController().navigate(R.id.navigate_noteFragment_to_listFragment)
         }
     }
 
-    private fun setupToolbarMenu(){
+    private fun setupToolbarMenu() {
         requireActivity().addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-                menuInflater.inflate(R.menu.toolbar_menu_notefragment,menu)
+                menuInflater.inflate(R.menu.toolbar_menu_notefragment, menu)
             }
 
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean {

@@ -9,7 +9,8 @@ import com.example.todoapp.database.model.NoteDb
 
 @Database(
     entities = [NoteDb::class],
-    version = 1)
+    version = 1
+)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun getNoteDao(): NoteDao
 

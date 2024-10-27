@@ -12,10 +12,11 @@ import android.widget.Toast
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.activityViewModels
+import androidx.navigation.Navigation
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.window.layout.WindowMetricsCalculator
-import com.example.todoapp.ui.fragment.noteaction.NoteModel
+import com.example.todoapp.ui.fragment.note.NoteModel
 import com.example.todoapp.R
 import com.example.todoapp.database.AppDatabase
 import com.example.todoapp.databinding.FragmentListBinding
@@ -48,13 +49,13 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
 
         noteListViewModel.onStart(requireContext())
 
-        listAdapter = ListAdapter(noteList,this)
+        listAdapter = ListAdapter(noteList, this)
 
         setupAdaptiveLayout()
 
         binding?.recyclerView?.adapter = listAdapter
 
-        noteListViewModel.notes.observe(viewLifecycleOwner){ notes ->
+        noteListViewModel.notes.observe(viewLifecycleOwner) { notes ->
             listAdapter.updateContactList(notes)
         }
 
@@ -65,7 +66,7 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
         }
     }
 
-    private fun setupAdaptiveLayout(){
+    private fun setupAdaptiveLayout() {
         val windowSizeClass = computeWindowSizeClasses()
 
         val spanCount = when (windowSizeClass) {
@@ -80,10 +81,10 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
         binding?.recyclerView?.layoutManager = GridLayoutManager(requireContext(), spanCount)
     }
 
-    private fun setupToolbarMenu(){
+    private fun setupToolbarMenu() {
         requireActivity().addMenuProvider(object : MenuProvider {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-                menuInflater.inflate(R.menu.toolbar_menu_listfragment,menu)
+                menuInflater.inflate(R.menu.toolbar_menu_listfragment, menu)
             }
 
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
@@ -113,6 +114,20 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
 
     override fun onLongClickedItem(note: NoteModel) {
         noteListViewModel.deleteNote(note)
-        Toast.makeText(requireContext(),"Note was deleted!", Toast.LENGTH_LONG).show()
+        Toast.makeText(requireContext(), "Note was deleted!", Toast.LENGTH_LONG).show()
+    }
+
+    override fun onClickedItem(note: NoteModel) {
+        val idNote = note.id
+        val nameNote = note.noteName.toString()
+        val textNote = note.noteText.toString()
+        val dateCrateNote = note.noteDateCreate.toString()
+        val action = ListFragmentDirections.navigateListFragmentToUpdateNoteFragment(
+            nameNote,
+            textNote,
+            idNote,
+            dateCrateNote
+        )
+        view?.let { Navigation.findNavController(it).navigate(action) }
     }
 }

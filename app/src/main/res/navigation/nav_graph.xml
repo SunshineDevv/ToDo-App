@@ -13,14 +13,42 @@
         <action
             android:id="@+id/navigate_listFragment_to_noteFragment"
             app:destination="@id/noteFragment" />
+        <action
+            android:id="@+id/navigate_listFragment_to_updateNoteFragment"
+            app:destination="@id/updateNoteFragment" />
     </fragment>
     <fragment
         android:id="@+id/noteFragment"
-        android:name="com.example.todoapp.ui.fragment.noteaction.NoteFragment"
+        android:name="com.example.todoapp.ui.fragment.note.NoteFragment"
         android:label="fragment_note"
         tools:layout="@layout/fragment_note" >
         <action
             android:id="@+id/navigate_noteFragment_to_listFragment"
             app:destination="@id/listFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/updateNoteFragment"
+        android:name="com.example.todoapp.ui.fragment.noteupdate.UpdateNoteFragment"
+        android:label="fragment_update_note"
+        tools:layout="@layout/fragment_update_note" >
+        <action
+            android:id="@+id/navigate_updateNoteFragment_to_listFragment"
+            app:destination="@id/listFragment" />
+        <argument
+            android:name="nameNote"
+            app:argType="string"
+            android:defaultValue="null" />
+        <argument
+            android:name="textNote"
+            app:argType="string"
+            android:defaultValue="null" />
+        <argument
+            android:name="idNote"
+            app:argType="long"
+            android:defaultValue="0L" />
+        <argument
+            android:name="dateCrateNote"
+            app:argType="string"
+            android:defaultValue="null" />
     </fragment>
 </navigation>
