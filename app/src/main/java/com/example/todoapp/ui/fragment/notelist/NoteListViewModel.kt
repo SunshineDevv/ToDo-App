@@ -1,12 +1,10 @@
 package com.example.todoapp.ui.fragment.notelist
 
 import android.content.Context
-import android.provider.ContactsContract.CommonDataKinds.Note
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import com.example.todoapp.database.AppDatabase
 import com.example.todoapp.database.model.NoteDb
@@ -33,12 +31,14 @@ class NoteListViewModel : ViewModel() {
     val isSelectionMode: LiveData<Boolean> = _isSelectionMode
 
     fun onStart(context: Context) {
+        Log.i("CHECK_LOG", "observer heita ili ya")
         val contactDao = AppDatabase.getDatabase(context).getNoteDao()
         repository = NoteRepository(contactDao)
         observeLiveData(repository.allNotes, ::handleNotesChanged)
     }
 
     private fun handleNotesChanged(noteDbs: List<NoteDb>) {
+        Log.i("CHECK_LOG", "observer heita")
         val sortedList = noteDbs.sortedByDescending {
             it.dateUpdate ?: it.dateCreate
         }.toNoteModelList()
@@ -46,12 +46,22 @@ class NoteListViewModel : ViewModel() {
     }
 
     fun setSelected(note: NoteModel) {
-        _notes.value.let { val tempNote = it?.find {
-            it.id == note.id }
+
+        _notes.value?.forEach {
+            Log.i("CHECK_LOG", "before ${it.isSelected.value} and ${it.id}")
+        }
+
+        _notes.value.let {
+            val tempNote = it?.find {
+                it.id == note.id
+            }
             tempNote?.isSelected?.value = tempNote?.isSelected?.value == false
             _notes.value = it
         }
-        Log.i("CHECK_LOG", "${_notes.value} and ${note.id}")
+
+        _notes.value?.forEach {
+            Log.i("CHECK_LOG", "after ${it.isSelected.value} and ${it.id}")
+        }
     }
 
     fun deleteNote(noteList: List<NoteModel>) {

@@ -33,6 +33,8 @@ class ListAdapter(
     override fun onBindViewHolder(holder: ListViewHolder, position: Int) {
         val note = noteList[position]
 
+        Log.i("CHECK_LOG", "viewholder list ${note.isSelected.value} and ${note.id}")
+
         val noteText = note.noteText
         val noteName = note.noteName
         val dateCreateNote = note.noteDateCreate
@@ -45,6 +47,10 @@ class ListAdapter(
 
         holder.binding.checkBox.visibility = if (isSelectionMode) View.VISIBLE else View.GONE
 
+        if (isSelectionMode) {
+            holder.binding.checkBox.isChecked = note.isSelected.value
+        }
+
         holder.itemView.setOnLongClickListener {
             itemClickedListener.onLongClickedItem(note)
             toggleSelectionMode()
@@ -53,28 +59,27 @@ class ListAdapter(
 
         holder.itemView.setOnClickListener {
             if (isSelectionMode) {
-                note.isSelected.value = !note.isSelected.value
-                holder.binding.checkBox.isChecked = note.isSelected.value
-                Log.i("CHECK_LOG", "${note.isSelected.value} and ${note.id}")
-
+                itemClickedListener.isCheckedItem(note)
+                Log.i("CHECK_LOG", "is im here ${note.isSelected} and ${note.id}")
             } else {
                 itemClickedListener.onClickedItem(note)
             }
         }
 
         holder.binding.checkBox.setOnCheckedChangeListener { _, isChecked ->
-            note.isSelected.value = isChecked
+            Log.i("CHECK_LOG", "checkbox check}")
             itemClickedListener.isCheckedItem(note)
-
         }
-
-        holder.binding.checkBox.setOnCheckedChangeListener(null)
-        holder.binding.checkBox.isChecked = note.isSelected.value
     }
 
     @SuppressLint("NotifyDataSetChanged")
     fun updateNoteList(newNoteList: List<NoteModel>) {
         noteList = newNoteList
+
+        noteList.forEach {
+            Log.i("CHECK_LOG", "check is list ${it.isSelected.value} and ${it.id}")
+        }
+
         notifyDataSetChanged()
     }
 

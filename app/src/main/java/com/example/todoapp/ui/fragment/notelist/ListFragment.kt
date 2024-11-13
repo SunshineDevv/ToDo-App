@@ -53,9 +53,18 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked, ListAdapter.Se
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        if (savedInstanceState == null) {
+            noteListViewModel.onStart(requireContext())
+        }
+
         startWork()
 
         noteListViewModel.notes.observe(viewLifecycleOwner) { notes ->
+
+            notes.forEach {
+                Log.i("CHECK_LOG", "note fragment ${it.isSelected.value} and ${it.id}")
+            }
+
             listAdapter.updateNoteList(notes)
         }
 
@@ -84,7 +93,7 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked, ListAdapter.Se
 
     private fun startWork(){
         setupToolbarMenu()
-        noteListViewModel.onStart(requireContext())
+        //noteListViewModel.onStart(requireContext())
         initObservers()
         listAdapter = ListAdapter(this,this)
         setupAdaptiveLayout()
