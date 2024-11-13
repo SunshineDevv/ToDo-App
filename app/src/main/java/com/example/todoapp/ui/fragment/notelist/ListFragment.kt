@@ -1,6 +1,7 @@
 package com.example.todoapp.ui.fragment.notelist
 
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.Menu
@@ -9,6 +10,7 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.core.view.MenuProvider
 import androidx.fragment.app.activityViewModels
@@ -23,7 +25,7 @@ import com.example.todoapp.databinding.FragmentListBinding
 import com.example.todoapp.ui.adapter.notelist.ListAdapter
 import com.example.todoapp.ui.fragment.State
 
-class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
+class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked, ListAdapter.SelectionModeListener {
 
     private var binding: FragmentListBinding? = null
 
@@ -34,6 +36,11 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
     private lateinit var database: AppDatabase
 
     private val noteListViewModel: NoteListViewModel by activityViewModels()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        onBackPressed()
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -46,27 +53,43 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        setupToolbarMenu()
-
-        noteListViewModel.onStart(requireContext())
-
-        initObservers()
-
-        listAdapter = ListAdapter(noteList, this)
-
-        setupAdaptiveLayout()
-
-        binding?.recyclerView?.adapter = listAdapter
+        startWork()
 
         noteListViewModel.notes.observe(viewLifecycleOwner) { notes ->
-            listAdapter.updateContactList(notes)
+            listAdapter.updateNoteList(notes)
         }
 
+        noteListViewModel.isSelectionMode.observe(viewLifecycleOwner) { isSelectionMode ->
+            listAdapter.setSelectionMode(isSelectionMode)
+            if (isSelectionMode) {
+                binding?.actionButton?.setImageResource(R.drawable.baseline_delete_24)
+            } else {
+                binding?.actionButton?.setImageResource(R.drawable.baseline_add_52)
+            }
+        }
         database = AppDatabase.getDatabase(requireContext())
 
-        binding?.addButton?.setOnClickListener {
-            findNavController().navigate(R.id.navigate_listFragment_to_noteFragment)
+        binding?.actionButton?.setImageResource(R.drawable.baseline_add_52)
+
+        binding?.actionButton?.setOnClickListener {
+            if(noteListViewModel.isSelectionMode.value == true){
+                deleteSelectedNotes()
+                listAdapter.exitSelectionMode()
+                noteListViewModel.disableSelectionMode()
+            }else{
+                findNavController().navigate(R.id.navigate_listFragment_to_noteFragment)
+            }
         }
+    }
+
+    private fun startWork(){
+        setupToolbarMenu()
+        noteListViewModel.onStart(requireContext())
+        initObservers()
+        listAdapter = ListAdapter(this,this)
+        setupAdaptiveLayout()
+        binding?.recyclerView?.adapter = listAdapter
+
     }
 
     private fun setupAdaptiveLayout() {
@@ -89,9 +112,7 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
             override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
                 menuInflater.inflate(R.menu.toolbar_menu_listfragment, menu)
             }
-
             override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
-
                 return true
             }
         }, viewLifecycleOwner)
@@ -115,8 +136,9 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
         }
     }
 
-    override fun onLongClickedItem(note: NoteModel) {
-        noteListViewModel.deleteNote(note)
+    private fun deleteSelectedNotes() {
+        val selectedNotes = listAdapter.getSelectedItems()
+        noteListViewModel.deleteNote(selectedNotes)
     }
 
     override fun onClickedItem(note: NoteModel) {
@@ -133,6 +155,15 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
         view?.let { Navigation.findNavController(it).navigate(action) }
     }
 
+    override fun onLongClickedItem(note: NoteModel) {
+        noteListViewModel.enableSelectionMode()
+        noteListViewModel.isSelectionMode.value?.let { listAdapter.setSelectionMode(it) }
+    }
+
+    override fun isCheckedItem(note: NoteModel) {
+        noteListViewModel.setSelected(note)
+    }
+
     private fun initObservers() {
         noteListViewModel.state.observe(viewLifecycleOwner) { state ->
             when(state){
@@ -147,4 +178,19 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
             }
         }
     }
+
+    private fun onBackPressed(){
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                listAdapter.exitSelectionMode()
+                noteListViewModel.disableSelectionMode()
+            }
+        }
+        activity?.onBackPressedDispatcher?.addCallback(
+            this,
+            callback
+        )
+    }
+
+    override fun onSelectionModeChanged(isSelectionMode: Boolean) {}
 }

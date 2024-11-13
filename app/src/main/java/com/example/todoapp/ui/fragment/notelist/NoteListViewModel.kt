@@ -1,9 +1,12 @@
 package com.example.todoapp.ui.fragment.notelist
 
 import android.content.Context
+import android.provider.ContactsContract.CommonDataKinds.Note
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import com.example.todoapp.database.AppDatabase
 import com.example.todoapp.database.model.NoteDb
@@ -26,6 +29,9 @@ class NoteListViewModel : ViewModel() {
     private val _state = MutableLiveData<State>()
     val state: LiveData<State> = _state
 
+    private val _isSelectionMode = MutableLiveData<Boolean>()
+    val isSelectionMode: LiveData<Boolean> = _isSelectionMode
+
     fun onStart(context: Context) {
         val contactDao = AppDatabase.getDatabase(context).getNoteDao()
         repository = NoteRepository(contactDao)
@@ -39,9 +45,20 @@ class NoteListViewModel : ViewModel() {
         _notes.postValue(sortedList)
     }
 
-    fun deleteNote(contact: NoteModel) {
+    fun setSelected(note: NoteModel) {
+        _notes.value.let { val tempNote = it?.find {
+            it.id == note.id }
+            tempNote?.isSelected?.value = tempNote?.isSelected?.value == false
+            _notes.value = it
+        }
+        Log.i("CHECK_LOG", "${_notes.value} and ${note.id}")
+    }
+
+    fun deleteNote(noteList: List<NoteModel>) {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.delete(contact.toNoteDbModel())
+            noteList.forEach { note ->
+                repository.delete(note.toNoteDbModel())
+            }
         }
         _state.postValue(State.Success("Note was deleted!"))
     }
@@ -49,4 +66,16 @@ class NoteListViewModel : ViewModel() {
     fun clearState() {
         _state.value = State.Empty
     }
+
+    fun enableSelectionMode() {
+        _isSelectionMode.value = true
+        Log.i("SELECTIONN", "Enable: ${_isSelectionMode.value}")
+    }
+
+    fun disableSelectionMode() {
+        _isSelectionMode.value = false
+        Log.i("SELECTIONN", "Disable: ${_isSelectionMode.value}")
+
+    }
+
 }
