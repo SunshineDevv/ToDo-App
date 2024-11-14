@@ -25,11 +25,9 @@ import com.example.todoapp.databinding.FragmentListBinding
 import com.example.todoapp.ui.adapter.notelist.ListAdapter
 import com.example.todoapp.ui.fragment.State
 
-class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked, ListAdapter.SelectionModeListener {
+class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
 
     private var binding: FragmentListBinding? = null
-
-    private var noteList: List<NoteModel> = listOf()
 
     private lateinit var listAdapter: ListAdapter
 
@@ -60,11 +58,6 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked, ListAdapter.Se
         startWork()
 
         noteListViewModel.notes.observe(viewLifecycleOwner) { notes ->
-
-//            notes.forEach {
-//                Log.i("CHECK_LOG", "note fragment ${it.isSelected.value} and ${it.id}")
-//            }
-
             listAdapter.updateNoteList(notes)
         }
 
@@ -93,12 +86,10 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked, ListAdapter.Se
 
     private fun startWork(){
         setupToolbarMenu()
-        //noteListViewModel.onStart(requireContext())
         initObservers()
-        listAdapter = ListAdapter(this,this)
+        listAdapter = ListAdapter(this)
         setupAdaptiveLayout()
         binding?.recyclerView?.adapter = listAdapter
-
     }
 
     private fun setupAdaptiveLayout() {
@@ -200,6 +191,4 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked, ListAdapter.Se
             callback
         )
     }
-
-    override fun onSelectionModeChanged(isSelectionMode: Boolean) {}
 }

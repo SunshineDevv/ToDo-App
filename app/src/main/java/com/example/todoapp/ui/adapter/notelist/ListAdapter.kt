@@ -10,8 +10,7 @@ import com.example.todoapp.ui.fragment.note.NoteModel
 import com.example.todoapp.databinding.ItemNoteBinding
 
 class ListAdapter(
-    private val itemClickedListener: RecyclerItemClicked,
-    private val selectionModeListener: SelectionModeListener,
+    private val itemClickedListener: RecyclerItemClicked
 ) : RecyclerView.Adapter<ListAdapter.ListViewHolder>() {
 
     private var isSelectionMode = false
@@ -49,7 +48,7 @@ class ListAdapter(
 
         holder.itemView.setOnLongClickListener {
             itemClickedListener.onLongClickedItem(note)
-            toggleSelectionMode()
+            itemClickedListener.isCheckedItem(note)
             true
         }
 
@@ -76,12 +75,6 @@ class ListAdapter(
     }
 
     @SuppressLint("NotifyDataSetChanged")
-    private fun toggleSelectionMode() {
-        selectionModeListener.onSelectionModeChanged(isSelectionMode)
-        notifyDataSetChanged()
-    }
-
-    @SuppressLint("NotifyDataSetChanged")
     fun exitSelectionMode() {
         isSelectionMode = false
         noteList.forEach { it.isSelected.value = false }
@@ -94,10 +87,6 @@ class ListAdapter(
 
     fun setSelectionMode(condition: Boolean){
         isSelectionMode = condition
-    }
-
-    interface SelectionModeListener {
-        fun onSelectionModeChanged(isSelectionMode: Boolean)
     }
 
     interface RecyclerItemClicked {
