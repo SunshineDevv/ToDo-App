@@ -15,6 +15,7 @@ import com.example.todoapp.extensions.toNoteModelList
 import com.example.todoapp.ui.fragment.State
 import com.example.todoapp.ui.fragment.note.NoteModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 class NoteListViewModel : ViewModel() {
@@ -46,22 +47,14 @@ class NoteListViewModel : ViewModel() {
     }
 
     fun setSelected(note: NoteModel) {
-
-        _notes.value?.forEach {
-            Log.i("CHECK_LOG", "before ${it.isSelected.value} and ${it.id}")
-        }
-
-        _notes.value.let {
-            val tempNote = it?.find {
-                it.id == note.id
+        val updatedNotes = _notes.value?.map {
+            if (it.id == note.id) {
+                it.copy(isSelected = MutableStateFlow(!it.isSelected.value))
+            } else {
+                it
             }
-            tempNote?.isSelected?.value = tempNote?.isSelected?.value == false
-            _notes.value = it
         }
-
-        _notes.value?.forEach {
-            Log.i("CHECK_LOG", "after ${it.isSelected.value} and ${it.id}")
-        }
+        _notes.postValue(updatedNotes ?: emptyList())
     }
 
     fun deleteNote(noteList: List<NoteModel>) {

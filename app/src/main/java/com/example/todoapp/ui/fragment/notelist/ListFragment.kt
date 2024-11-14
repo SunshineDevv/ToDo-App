@@ -61,9 +61,9 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked, ListAdapter.Se
 
         noteListViewModel.notes.observe(viewLifecycleOwner) { notes ->
 
-            notes.forEach {
-                Log.i("CHECK_LOG", "note fragment ${it.isSelected.value} and ${it.id}")
-            }
+//            notes.forEach {
+//                Log.i("CHECK_LOG", "note fragment ${it.isSelected.value} and ${it.id}")
+//            }
 
             listAdapter.updateNoteList(notes)
         }
