@@ -11,6 +11,7 @@ import com.example.todoapp.database.repository.NoteRepository
 import com.example.todoapp.ui.fragment.State
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -19,11 +20,11 @@ class NoteViewModel @Inject constructor(
     private val repository: NoteRepository
 ) : ViewModel() {
 
-    val nameNote = MutableLiveData<String>()
-    val textNote = MutableLiveData<String>()
+    val nameNote = MutableStateFlow("")
+    val textNote = MutableStateFlow("")
 
-    private val _state = MutableLiveData<State>()
-    val state: LiveData<State> = _state
+    private val _state = MutableStateFlow<State>(State.Empty)
+    val state: MutableStateFlow<State> = _state
 
     fun addNote(nameNote: String, textNote: String, dateCreateNote: Long, dateUpdateNote: Long) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -36,7 +37,7 @@ class NoteViewModel @Inject constructor(
                 )
             )
         }
-        _state.postValue(State.Success("New note was added!"))
+        _state.value = State.Success("New note was added!")
     }
 
     fun clearState() {

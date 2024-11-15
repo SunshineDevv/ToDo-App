@@ -12,11 +12,15 @@ import android.widget.Toast
 import androidx.core.view.MenuProvider
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.flowWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.todoapp.R
 import com.example.todoapp.databinding.FragmentNoteBinding
 import com.example.todoapp.ui.fragment.State
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class NoteFragment : Fragment() {
@@ -66,16 +70,20 @@ class NoteFragment : Fragment() {
     }
 
     private fun initObservers() {
-        noteViewModel.state.observe(viewLifecycleOwner) { state ->
-            when(state){
-                is State.Success -> {
-                    Toast.makeText(requireContext(), state.successMsg, Toast.LENGTH_LONG).show()
-                    noteViewModel.clearState()
-                }
-                is State.Error -> {
+        lifecycleScope.launch {
+            noteViewModel.state.flowWithLifecycle(lifecycle).collectLatest { state ->
+                when (state) {
+                    is State.Success -> {
+                        Toast.makeText(requireContext(), state.successMsg, Toast.LENGTH_LONG).show()
+                        noteViewModel.clearState()
+                    }
 
+                    is State.Error -> {
+
+                    }
+
+                    else -> {}
                 }
-                else -> { }
             }
         }
     }

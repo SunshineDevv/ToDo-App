@@ -8,6 +8,8 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.flowWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.todoapp.R
@@ -15,6 +17,8 @@ import com.example.todoapp.databinding.FragmentUpdateNoteBinding
 import com.example.todoapp.extensions.toFormattedDate
 import com.example.todoapp.ui.fragment.State
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class UpdateNoteFragment : Fragment() {
@@ -75,18 +79,21 @@ class UpdateNoteFragment : Fragment() {
     }
 
     private fun initObservers() {
-        updateNoteViewModel.state.observe(viewLifecycleOwner) { state ->
-            when(state){
-                is State.Success -> {
-                    Toast.makeText(requireContext(), state.successMsg, Toast.LENGTH_LONG).show()
-                    updateNoteViewModel.clearState()
-                }
-                is State.Error -> {
+        lifecycleScope.launch {
+            updateNoteViewModel.state.flowWithLifecycle(lifecycle).collectLatest { state ->
+                when (state) {
+                    is State.Success -> {
+                        Toast.makeText(requireContext(), state.successMsg, Toast.LENGTH_LONG).show()
+                        updateNoteViewModel.clearState()
+                    }
 
+                    is State.Error -> {
+
+                    }
+
+                    else -> {}
                 }
-                else -> { }
             }
         }
     }
-
 }
