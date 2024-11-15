@@ -94,7 +94,14 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
             }
         }
 
-        binding?.recyclerView?.layoutManager = GridLayoutManager(requireContext(), spanCount)
+        val gridLayoutManager = GridLayoutManager(requireContext(), spanCount)
+        gridLayoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+            override fun getSpanSize(position: Int): Int {
+                return if (position == 0) spanCount else 1
+            }
+        }
+
+        binding?.recyclerView?.layoutManager = gridLayoutManager
     }
 
     private fun setupToolbarMenu() {

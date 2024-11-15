@@ -6,69 +6,84 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.example.todoapp.databinding.ItemHeaderBinding
 import com.example.todoapp.ui.fragment.note.NoteModel
 import com.example.todoapp.databinding.ItemNoteBinding
 
+
 class ListAdapter(
     private val itemClickedListener: RecyclerItemClicked
-) : RecyclerView.Adapter<ListAdapter.ListViewHolder>() {
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+
+    companion object {
+        private const val VIEW_TYPE_HEADER = 0
+        private const val VIEW_TYPE_NOTE = 1
+    }
 
     private var isSelectionMode = false
-
     private var noteList: List<NoteModel> = emptyList()
 
-    class ListViewHolder(val binding: ItemNoteBinding) :
-        RecyclerView.ViewHolder(binding.root)
+    class HeaderViewHolder(val binding: ItemHeaderBinding) : RecyclerView.ViewHolder(binding.root)
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ListViewHolder {
-        val binding = ItemNoteBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return ListViewHolder(binding)
+    class NoteViewHolder(val binding: ItemNoteBinding) : RecyclerView.ViewHolder(binding.root)
+
+    override fun getItemViewType(position: Int): Int {
+        // Определение типа элемента: 0 для хедера, 1 для заметок
+        return if (position == 0) VIEW_TYPE_HEADER else VIEW_TYPE_NOTE
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        return when (viewType) {
+            VIEW_TYPE_HEADER -> {
+                val binding = ItemHeaderBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+                HeaderViewHolder(binding)
+            }
+            VIEW_TYPE_NOTE -> {
+                val binding = ItemNoteBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+                NoteViewHolder(binding)
+            }
+            else -> throw IllegalArgumentException("Invalid view type")
+        }
     }
 
     override fun getItemCount(): Int {
         return noteList.size
     }
 
-    override fun onBindViewHolder(holder: ListViewHolder, position: Int) {
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        marginOnSecondElement(holder, position)
+        if (holder is HeaderViewHolder) {
+            holder.binding.headerTitle.text = "All Notes"
+            holder.binding.sizeOfList.text = "(${noteList.size - 1})"
+        } else if (holder is NoteViewHolder) {
+            val note = noteList[position - 1]
 
-        marginOnSecondElement(holder,position)
+            holder.binding.textNote.text = note.noteText
+            holder.binding.noteName.text = note.noteName
+            holder.binding.dateCreateNote.text = note.noteDateCreate
+            holder.binding.dateUpdateNote.text = note.noteDateUpdate
 
-        val note = noteList[position]
+            holder.binding.checkBox.visibility = if (isSelectionMode) View.VISIBLE else View.GONE
+            holder.binding.checkBox.isChecked = note.isSelected.value
 
-        Log.i("CHECK_LOG", "viewholder list ${note.isSelected.value} and ${note.id}")
-
-        val noteText = note.noteText
-        val noteName = note.noteName
-        val dateCreateNote = note.noteDateCreate
-        val dateUpdateNote = note.noteDateUpdate
-
-        holder.binding.textNote.text = noteText
-        holder.binding.noteName.text = noteName
-        holder.binding.dateCreateNote.text = dateCreateNote
-        holder.binding.dateUpdateNote.text = dateUpdateNote
-
-        holder.binding.checkBox.visibility = if (isSelectionMode) View.VISIBLE else View.GONE
-
-        holder.itemView.setOnLongClickListener {
-            itemClickedListener.onLongClickedItem(note)
-            itemClickedListener.isCheckedItem(note)
-            true
-        }
-
-        holder.itemView.setOnClickListener {
-            if (isSelectionMode) {
+            holder.itemView.setOnLongClickListener {
+                itemClickedListener.onLongClickedItem(note)
                 itemClickedListener.isCheckedItem(note)
-            } else {
-                itemClickedListener.onClickedItem(note)
+                true
+            }
+
+            holder.itemView.setOnClickListener {
+                if (isSelectionMode) {
+                    itemClickedListener.isCheckedItem(note)
+                } else {
+                    itemClickedListener.onClickedItem(note)
+                }
+            }
+
+            holder.binding.checkBox.setOnClickListener {
+                note.isSelected.value = holder.binding.checkBox.isChecked
             }
         }
-
-        holder.binding.checkBox.setOnClickListener {
-            note.isSelected.value = holder.binding.checkBox.isChecked
-        }
-
-        holder.binding.checkBox.isChecked = note.isSelected.value
-
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -98,9 +113,9 @@ class ListAdapter(
         fun isCheckedItem(note: NoteModel)
     }
 
-    private fun marginOnSecondElement(holder: ListViewHolder, position: Int){
+    private fun marginOnSecondElement(holder: RecyclerView.ViewHolder, position: Int){
         val layoutParams = holder.itemView.layoutParams as ViewGroup.MarginLayoutParams
-        if (position % 2 == 1) {
+        if (position != 0 && position % 2 == 0) {
             layoutParams.topMargin = 50
         } else {
             layoutParams.topMargin = 0
