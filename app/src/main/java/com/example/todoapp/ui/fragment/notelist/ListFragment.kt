@@ -151,7 +151,6 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
             noteListViewModel.notes.flowWithLifecycle(lifecycle).collectLatest { notes ->
                 listAdapter.updateNoteList(notes)
             }
-
         }
 
         lifecycleScope.launch {

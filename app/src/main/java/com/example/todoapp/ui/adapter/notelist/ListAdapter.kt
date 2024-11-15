@@ -30,6 +30,9 @@ class ListAdapter(
     }
 
     override fun onBindViewHolder(holder: ListViewHolder, position: Int) {
+
+        marginOnSecondElement(holder,position)
+
         val note = noteList[position]
 
         Log.i("CHECK_LOG", "viewholder list ${note.isSelected.value} and ${note.id}")
@@ -95,4 +98,13 @@ class ListAdapter(
         fun isCheckedItem(note: NoteModel)
     }
 
+    private fun marginOnSecondElement(holder: ListViewHolder, position: Int){
+        val layoutParams = holder.itemView.layoutParams as ViewGroup.MarginLayoutParams
+        if (position % 2 == 1) {
+            layoutParams.topMargin = 50
+        } else {
+            layoutParams.topMargin = 0
+        }
+        holder.itemView.layoutParams = layoutParams
+    }
 }
