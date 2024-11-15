@@ -74,7 +74,7 @@ class NoteFragment : Fragment() {
             noteViewModel.state.flowWithLifecycle(lifecycle).collectLatest { state ->
                 when (state) {
                     is State.Success -> {
-                        Toast.makeText(requireContext(), state.successMsg, Toast.LENGTH_LONG).show()
+                        Toast.makeText(requireContext(), state.successMsg, Toast.LENGTH_SHORT).show()
                         noteViewModel.clearState()
                     }
 

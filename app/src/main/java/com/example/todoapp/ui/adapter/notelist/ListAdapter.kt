@@ -47,14 +47,14 @@ class ListAdapter(
     }
 
     override fun getItemCount(): Int {
-        return noteList.size
+        return noteList.size + 1
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         marginOnSecondElement(holder, position)
         if (holder is HeaderViewHolder) {
             holder.binding.headerTitle.text = "All Notes"
-            holder.binding.sizeOfList.text = "(${noteList.size - 1})"
+            holder.binding.sizeOfList.text = "(${noteList.size})"
         } else if (holder is NoteViewHolder) {
             val note = noteList[position - 1]
 

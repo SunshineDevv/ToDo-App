@@ -62,7 +62,11 @@ class NoteListViewModel @Inject constructor(
                 repository.delete(note.toNoteDbModel())
             }
         }
-        _state.value = State.Success("Note was deleted!")
+        if (noteList.size == 1){
+            _state.value = State.Success("Note was deleted!")
+        } else {
+            _state.value = State.Success("Notes were deleted!")
+        }
     }
 
     fun clearState() {

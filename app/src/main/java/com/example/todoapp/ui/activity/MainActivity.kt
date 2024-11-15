@@ -53,7 +53,7 @@ class MainActivity : AppCompatActivity() {
         when (destination.id) {
             R.id.noteFragment -> {
                 (supportActionBar)?.apply {
-                    title = "ToDoApp"
+                    title = "MyNotes"
                     setDisplayHomeAsUpEnabled(true)
                     setHomeButtonEnabled(true)
                 }
@@ -61,7 +61,7 @@ class MainActivity : AppCompatActivity() {
 
             else -> {
                 (supportActionBar)?.apply {
-                    title = "ToDoApp"
+                    title = "MyNotes"
                     setDisplayHomeAsUpEnabled(false)
                 }
             }
