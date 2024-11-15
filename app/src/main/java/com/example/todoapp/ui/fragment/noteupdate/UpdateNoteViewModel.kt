@@ -10,23 +10,19 @@ import com.example.todoapp.database.model.NoteDb
 import com.example.todoapp.database.repository.NoteRepository
 import com.example.todoapp.extensions.toDateInMillis
 import com.example.todoapp.ui.fragment.State
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class UpdateNoteViewModel : ViewModel() {
+@HiltViewModel
+class UpdateNoteViewModel @Inject constructor(private val repository: NoteRepository): ViewModel() {
 
     val nameNote = MutableLiveData<String>()
     val textNote = MutableLiveData<String>()
 
-    private lateinit var repository: NoteRepository
-
     private val _state = MutableLiveData<State>()
     val state: LiveData<State> = _state
-
-    fun onStart(context: Context) {
-        val contactDao = AppDatabase.getDatabase(context).getNoteDao()
-        repository = NoteRepository(contactDao)
-    }
 
     fun updateNote(
         idNote: Long,

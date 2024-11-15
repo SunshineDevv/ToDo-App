@@ -3,12 +3,11 @@ package com.example.todoapp.database.repository
 import androidx.lifecycle.LiveData
 import com.example.todoapp.database.dao.NoteDao
 import com.example.todoapp.database.model.NoteDb
+import javax.inject.Inject
 
-class NoteRepository(private val noteDao: NoteDao) {
+class NoteRepository @Inject constructor(private val noteDao: NoteDao) {
 
     val allNotes: LiveData<List<NoteDb>> = noteDao.getAllNotes()
-
-    val notesFlow = noteDao.getNotesFlow()
 
     suspend fun upsert(note: NoteDb) {
         noteDao.upsertNote(note)

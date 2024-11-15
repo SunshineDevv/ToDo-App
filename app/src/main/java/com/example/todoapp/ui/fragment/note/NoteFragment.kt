@@ -16,8 +16,9 @@ import androidx.navigation.fragment.findNavController
 import com.example.todoapp.R
 import com.example.todoapp.databinding.FragmentNoteBinding
 import com.example.todoapp.ui.fragment.State
+import dagger.hilt.android.AndroidEntryPoint
 
-
+@AndroidEntryPoint
 class NoteFragment : Fragment() {
 
     private var binding: FragmentNoteBinding? = null
@@ -38,8 +39,6 @@ class NoteFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupToolbarMenu()
-
-        noteViewModel.onStart(requireContext())
 
         initObservers()
         binding?.addNewNoteButton?.setOnClickListener {

@@ -2,8 +2,6 @@ package com.example.todoapp.ui.fragment.notelist
 
 import android.content.Context
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.todoapp.database.AppDatabase
@@ -14,27 +12,28 @@ import com.example.todoapp.extensions.toNoteDbModel
 import com.example.todoapp.extensions.toNoteModelList
 import com.example.todoapp.ui.fragment.State
 import com.example.todoapp.ui.fragment.note.NoteModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class NoteListViewModel : ViewModel() {
+@HiltViewModel
+class NoteListViewModel @Inject constructor(
+    private val repository: NoteRepository
+) : ViewModel() {
 
-    private lateinit var repository: NoteRepository
+    private val _notes = MutableStateFlow<List<NoteModel>>(emptyList())
+    val notes: StateFlow<List<NoteModel>> = _notes
 
-    private val _notes = MutableLiveData<List<NoteModel>>(emptyList())
-    val notes: LiveData<List<NoteModel>> = _notes
+    private val _state = MutableStateFlow<State>(State.Empty)
+    val state: StateFlow<State> = _state
 
-    private val _state = MutableLiveData<State>()
-    val state: LiveData<State> = _state
+    private val _isSelectionMode = MutableStateFlow<Boolean>(false)
+    val isSelectionMode: StateFlow<Boolean> = _isSelectionMode
 
-    private val _isSelectionMode = MutableLiveData<Boolean>()
-    val isSelectionMode: LiveData<Boolean> = _isSelectionMode
-
-    fun onStart(context: Context) {
-        Log.i("CHECK_LOG", "observer heita ili ya")
-        val contactDao = AppDatabase.getDatabase(context).getNoteDao()
-        repository = NoteRepository(contactDao)
+    fun onStart() {
         observeLiveData(repository.allNotes, ::handleNotesChanged)
     }
 
@@ -43,18 +42,18 @@ class NoteListViewModel : ViewModel() {
         val sortedList = noteDbs.sortedByDescending {
             it.dateUpdate ?: it.dateCreate
         }.toNoteModelList()
-        _notes.postValue(sortedList)
+        _notes.value = sortedList
     }
 
     fun setSelected(note: NoteModel) {
-        val updatedNotes = _notes.value?.map {
+        val updatedNotes = _notes.value.map {
             if (it.id == note.id) {
                 it.copy(isSelected = MutableStateFlow(!it.isSelected.value))
             } else {
                 it
             }
         }
-        _notes.postValue(updatedNotes ?: emptyList())
+        _notes.value = updatedNotes ?: emptyList()
     }
 
     fun deleteNote(noteList: List<NoteModel>) {
@@ -63,7 +62,7 @@ class NoteListViewModel : ViewModel() {
                 repository.delete(note.toNoteDbModel())
             }
         }
-        _state.postValue(State.Success("Note was deleted!"))
+        _state.value = State.Success("Note was deleted!")
     }
 
     fun clearState() {
@@ -80,5 +79,4 @@ class NoteListViewModel : ViewModel() {
         Log.i("SELECTIONN", "Disable: ${_isSelectionMode.value}")
 
     }
-
 }

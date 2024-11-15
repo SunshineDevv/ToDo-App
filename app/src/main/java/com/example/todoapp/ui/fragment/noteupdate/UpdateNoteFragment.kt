@@ -14,7 +14,9 @@ import com.example.todoapp.R
 import com.example.todoapp.databinding.FragmentUpdateNoteBinding
 import com.example.todoapp.extensions.toFormattedDate
 import com.example.todoapp.ui.fragment.State
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class UpdateNoteFragment : Fragment() {
 
     private var binding: FragmentUpdateNoteBinding? = null
@@ -36,8 +38,6 @@ class UpdateNoteFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        updateNoteViewModel.onStart(requireContext())
 
         initObservers()
 
