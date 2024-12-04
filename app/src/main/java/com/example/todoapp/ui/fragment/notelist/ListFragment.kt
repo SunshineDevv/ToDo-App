@@ -22,6 +22,7 @@ import androidx.window.layout.WindowMetricsCalculator
 import com.example.todoapp.ui.fragment.note.NoteModel
 import com.example.todoapp.R
 import com.example.todoapp.databinding.FragmentListBinding
+import com.example.todoapp.extensions.observe
 import com.example.todoapp.ui.adapter.notelist.ListAdapter
 import com.example.todoapp.ui.fragment.State
 import dagger.hilt.android.AndroidEntryPoint

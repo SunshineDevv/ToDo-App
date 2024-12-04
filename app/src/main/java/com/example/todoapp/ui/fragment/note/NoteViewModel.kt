@@ -1,17 +1,14 @@
 package com.example.todoapp.ui.fragment.note
 
-import android.content.Context
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.todoapp.database.AppDatabase
 import com.example.todoapp.database.model.NoteDb
 import com.example.todoapp.database.repository.NoteRepository
 import com.example.todoapp.ui.fragment.State
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -24,7 +21,10 @@ class NoteViewModel @Inject constructor(
     val textNote = MutableStateFlow("")
 
     private val _state = MutableStateFlow<State>(State.Empty)
-    val state: MutableStateFlow<State> = _state
+    val state: StateFlow<State> = _state
+
+    private val _isColorsVisible = MutableStateFlow(false)
+    val isColorsVisible: StateFlow<Boolean> = _isColorsVisible
 
     fun addNote(nameNote: String, textNote: String, dateCreateNote: Long, dateUpdateNote: Long) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -43,4 +43,17 @@ class NoteViewModel @Inject constructor(
     fun clearState() {
         _state.value = State.Empty
     }
+
+    fun setVisibleColor(){
+        _isColorsVisible.value = true
+    }
+
+    fun unsetVisibleColor(){
+        _isColorsVisible.value = false
+    }
+
+    fun toggleColorsVisibility() {
+        _isColorsVisible.value = !_isColorsVisible.value
+    }
+
 }
