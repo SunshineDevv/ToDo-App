@@ -26,14 +26,15 @@ class NoteViewModel @Inject constructor(
     private val _isColorsVisible = MutableStateFlow(false)
     val isColorsVisible: StateFlow<Boolean> = _isColorsVisible
 
-    fun addNote(nameNote: String, textNote: String, dateCreateNote: Long, dateUpdateNote: Long) {
+    fun addNote(nameNote: String, textNote: String, dateCreateNote: Long, dateUpdateNote: Long, noteColor: String) {
         viewModelScope.launch(Dispatchers.IO) {
             repository.upsert(
                 NoteDb(
                     noteName = nameNote,
                     noteText = textNote,
                     dateCreate = dateCreateNote,
-                    dateUpdate = dateUpdateNote
+                    dateUpdate = dateUpdateNote,
+                    noteColor = noteColor
                 )
             )
         }

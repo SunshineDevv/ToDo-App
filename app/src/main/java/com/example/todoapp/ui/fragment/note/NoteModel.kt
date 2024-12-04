@@ -8,5 +8,6 @@ data class NoteModel(
     val noteName: String?,
     val noteDateCreate: String?,
     val noteDateUpdate: String?,
-    var isSelected: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    var isSelected: MutableStateFlow<Boolean> = MutableStateFlow(false),
+    var noteColor: String?
 )

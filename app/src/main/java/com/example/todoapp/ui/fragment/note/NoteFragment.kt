@@ -56,7 +56,7 @@ class NoteFragment : Fragment() {
             val nameNote = binding?.nameEditText?.text.toString()
             val textNote = binding?.textNoteEditText?.text.toString()
 
-            noteViewModel.addNote(nameNote, textNote, dateCreateNote, 0)
+            noteViewModel.addNote(nameNote, textNote, dateCreateNote, 0,R.color.orange.toString())
             findNavController().navigate(R.id.navigate_noteFragment_to_listFragment)
         }
         val buttonSpacing = setupAdaptiveColorAnimation()

@@ -66,7 +66,8 @@ class UpdateNoteFragment : Fragment() {
                 newNameNote,
                 newTextNote,
                 dateCreateNote,
-                dateUpdateNote
+                dateUpdateNote,
+                R.color.orange.toString()
             )
 
             findNavController().navigate(R.id.navigate_updateNoteFragment_to_listFragment)

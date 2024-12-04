@@ -12,7 +12,8 @@ fun NoteDb.toNoteUIModel(): NoteModel {
         noteName = noteName,
         noteText = noteText,
         noteDateCreate = dateCreate?.toFormattedDate(),
-        noteDateUpdate = dateUpdate?.toFormattedDate()
+        noteDateUpdate = dateUpdate?.toFormattedDate(),
+        noteColor = noteColor
     )
 }
 
@@ -22,7 +23,8 @@ fun NoteModel.toNoteDbModel(): NoteDb {
         noteName = noteName,
         noteText = noteText,
         dateCreate = noteDateCreate?.toDateInMillis(),
-        dateUpdate = noteDateUpdate?.toDateInMillis()
+        dateUpdate = noteDateUpdate?.toDateInMillis(),
+        noteColor = noteColor
     )
 }
 

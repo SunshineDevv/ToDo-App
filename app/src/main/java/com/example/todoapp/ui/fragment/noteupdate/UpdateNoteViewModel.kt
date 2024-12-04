@@ -31,7 +31,8 @@ class UpdateNoteViewModel @Inject constructor(private val repository: NoteReposi
         nameNote: String,
         textNote: String,
         dateCreateNote: String,
-        dateUpdateNote: String
+        dateUpdateNote: String,
+        noteColor: String
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             repository.upsert(
@@ -40,7 +41,8 @@ class UpdateNoteViewModel @Inject constructor(private val repository: NoteReposi
                     noteName = nameNote,
                     noteText = textNote,
                     dateCreate = dateCreateNote.toDateInMillis(),
-                    dateUpdate = dateUpdateNote.toDateInMillis()
+                    dateUpdate = dateUpdateNote.toDateInMillis(),
+                    noteColor = noteColor
                 )
             )
         }
