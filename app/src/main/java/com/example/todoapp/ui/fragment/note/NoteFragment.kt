@@ -1,8 +1,6 @@
 package com.example.todoapp.ui.fragment.note
 
 import android.animation.ObjectAnimator
-import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -14,7 +12,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
-import androidx.core.content.ContextCompat
 import androidx.core.view.MenuProvider
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.viewModels
@@ -24,9 +21,9 @@ import androidx.navigation.fragment.findNavController
 import androidx.window.layout.WindowMetricsCalculator
 import com.example.todoapp.R
 import com.example.todoapp.databinding.FragmentNoteBinding
-import com.example.todoapp.extensions.observe
 import com.example.todoapp.ui.fragment.State
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -66,23 +63,19 @@ class NoteFragment : Fragment() {
 
         binding?.mainButton?.setOnClickListener {
             noteViewModel.toggleColorsVisibility()
-            Log.i("BUTTONVISIBLE", "before IF ${noteViewModel.isColorsVisible.value}")
             if(noteViewModel.isColorsVisible.value){
                 noteViewModel.setVisibleColor()
-                Log.i("BUTTONVISIBLE", "after set ${noteViewModel.isColorsVisible.value}")
-                colorVisible(buttonSpacing)
+                colorVisibleAnimation(buttonSpacing)
             } else {
                 noteViewModel.unsetVisibleColor()
-                Log.i("BUTTONVISIBLE", "after unset ${noteViewModel.isColorsVisible.value}")
-                colorInvisible()
+                colorInvisibleAnimation()
             }
-            Log.i("BUTTONVISIBLE", "after toggle ${noteViewModel.isColorsVisible.value}")
         }
 
         lifecycleScope.launch {
             noteViewModel.isColorsVisible.flowWithLifecycle(lifecycle).collectLatest {
                 if (it){
-                    colorVisible(buttonSpacing)
+                    colorVisibleAnimation(buttonSpacing)
                 }
             }
         }
@@ -134,7 +127,7 @@ class NoteFragment : Fragment() {
 
     private fun getWindowSizeClass(dpWidth: Float): WindowWidthSizeClass {
         return when {
-            dpWidth < 300 -> WindowWidthSizeClass.Compact
+            dpWidth < 400 -> WindowWidthSizeClass.Compact
             dpWidth < 600 -> WindowWidthSizeClass.Medium
             else -> WindowWidthSizeClass.Expanded
         }
@@ -153,15 +146,11 @@ class NoteFragment : Fragment() {
         return buttonSpacing
     }
 
-    private fun colorVisible(buttonSpacing: Int) {
-        val background = binding?.mainButton?.background as GradientDrawable
-        background.setColor(Color.parseColor("#E8774E"))
+    private fun colorVisibleAnimation(buttonSpacing: Int) {
         binding?.apply {
             colorButton1.visibility = View.VISIBLE
             colorButton2.visibility = View.VISIBLE
             colorButton3.visibility = View.VISIBLE
-
-            setButtonsBackground()
 
             ObjectAnimator.ofFloat(colorButton1, "translationX", -(buttonSpacing * 2).toFloat())
                 .apply {
@@ -182,7 +171,9 @@ class NoteFragment : Fragment() {
 
         binding?.apply {
             colorButton1.setOnClickListener {
-
+                val background = colorButton1.background
+                colorButton1.background = mainButton.background
+                mainButton.background = background
             }
             colorButton2.setOnClickListener {
 
@@ -193,8 +184,13 @@ class NoteFragment : Fragment() {
         }
     }
 
-    private fun colorInvisible(){
+    private fun colorInvisibleAnimation(){
         binding?.apply {
+
+            colorButton1.isClickable = false
+            colorButton2.isClickable = false
+            colorButton3.isClickable = false
+            mainButton.isClickable = false
 
             ObjectAnimator.ofFloat(colorButton1, "translationX", 0f)
                 .apply {
@@ -212,22 +208,17 @@ class NoteFragment : Fragment() {
                     start()
                 }
 
-            colorButton1.visibility = View.GONE
-            colorButton2.visibility = View.GONE
-            colorButton3.visibility = View.GONE
+            lifecycleScope.launch {
+                delay(300L)
+                colorButton1.visibility = View.GONE
+                colorButton2.visibility = View.GONE
+                colorButton3.visibility = View.GONE
 
-        }
-    }
-
-    private fun setButtonsBackground(){
-        binding?.apply {
-            val background1 = colorButton1.background as GradientDrawable
-            val background2 = colorButton2.background as GradientDrawable
-            val background3 = colorButton3.background as GradientDrawable
-
-            background1.setColor(Color.parseColor("#F8D34E"))
-            background2.setColor(Color.parseColor("#98B8DE"))
-            background3.setColor(Color.parseColor("#FFA6DB"))
+                colorButton1.isClickable = true
+                colorButton2.isClickable = true
+                colorButton3.isClickable = true
+                mainButton.isClickable = true
+            }
         }
     }
 }
