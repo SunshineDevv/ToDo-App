@@ -1,6 +1,12 @@
 package com.example.todoapp.ui.fragment.note
 
 import android.animation.ObjectAnimator
+import android.annotation.SuppressLint
+import android.content.res.ColorStateList
+import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.ShapeDrawable
+import android.graphics.drawable.shapes.Shape
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -12,6 +18,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.core.content.ContextCompat
 import androidx.core.view.MenuProvider
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.viewModels
@@ -45,6 +52,7 @@ class NoteFragment : Fragment() {
         return binding?.root
     }
 
+    @SuppressLint("UseCompatLoadingForDrawables")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupToolbarMenu()
@@ -56,7 +64,7 @@ class NoteFragment : Fragment() {
             val nameNote = binding?.nameEditText?.text.toString()
             val textNote = binding?.textNoteEditText?.text.toString()
 
-            noteViewModel.addNote(nameNote, textNote, dateCreateNote, 0,R.color.orange.toString())
+            noteViewModel.addNote(nameNote, textNote, dateCreateNote, 0,"color")
             findNavController().navigate(R.id.navigate_noteFragment_to_listFragment)
         }
         val buttonSpacing = setupAdaptiveColorAnimation()
@@ -113,6 +121,20 @@ class NoteFragment : Fragment() {
                 }
             }
         }
+        lifecycleScope.launch {
+            noteViewModel.buttonColors.flowWithLifecycle(lifecycle).collectLatest { colors ->
+                binding?.apply {
+                    colors.forEach { (position, drawableRes) ->
+                        when (position) {
+                            3 -> colorButton1.setBackgroundResource(drawableRes)
+                            2 -> colorButton2.setBackgroundResource(drawableRes)
+                            1 -> colorButton3.setBackgroundResource(drawableRes)
+                            4 -> mainButton.setBackgroundResource(drawableRes)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun computeWindowSizeClasses(): WindowWidthSizeClass {
@@ -146,6 +168,7 @@ class NoteFragment : Fragment() {
         return buttonSpacing
     }
 
+    @SuppressLint("SoonBlockedPrivateApi", "UseCompatLoadingForDrawables")
     private fun colorVisibleAnimation(buttonSpacing: Int) {
         binding?.apply {
             colorButton1.visibility = View.VISIBLE
@@ -168,18 +191,22 @@ class NoteFragment : Fragment() {
                     start()
                 }
         }
+        setupColorButtonListeners()
+    }
 
+    private fun setupColorButtonListeners() {
         binding?.apply {
             colorButton1.setOnClickListener {
-                val background = colorButton1.background
-                colorButton1.background = mainButton.background
-                mainButton.background = background
+                Log.d("ButtonColors", "colorButton1\n")
+                noteViewModel.swapButtonColors(3, 4)
             }
             colorButton2.setOnClickListener {
-
+                Log.d("ButtonColors", "colorButton2\n")
+                noteViewModel.swapButtonColors(2, 4)
             }
             colorButton3.setOnClickListener {
-
+                Log.d("ButtonColors", "colorButton3\n")
+                noteViewModel.swapButtonColors(1, 4)
             }
         }
     }
