@@ -38,6 +38,25 @@ class NoteViewModel @Inject constructor(
     )
     val buttonColors: StateFlow<List<Pair<Int, Int>>> = _buttonColors
 
+    private val _layoutBackgroundColor = MutableStateFlow(R.drawable.rounded_background_orange)
+    val layoutBackgroundColor: StateFlow<Int> = _layoutBackgroundColor
+
+    private val _editTextBackgroundColor = MutableStateFlow(R.drawable.rounded_background_orange)
+    val editTextBackgroundColor: StateFlow<Int> = _editTextBackgroundColor
+
+    private val buttonToBackgroundMap = mapOf(
+        R.drawable.button_background_yellow to R.drawable.rounded_background_yellow,
+        R.drawable.button_background_light_blue to R.drawable.rounded_background_light_blue,
+        R.drawable.button_background_pink to R.drawable.rounded_background_pink,
+        R.drawable.button_background_orange to R.drawable.rounded_background_orange
+    )
+
+    fun updateBackgroundsFromButton(buttonDrawableRes: Int) {
+        val newBackgroundRes = buttonToBackgroundMap[buttonDrawableRes] ?: R.drawable.rounded_background_orange
+        _layoutBackgroundColor.value = newBackgroundRes
+        _editTextBackgroundColor.value = newBackgroundRes
+    }
+
     fun swapButtonColors(position1: Int, position2: Int) {
         _buttonColors.value = _buttonColors.value.toMutableList().apply {
             val index1 = position1 - 1

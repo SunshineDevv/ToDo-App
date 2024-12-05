@@ -138,6 +138,20 @@ class NoteFragment : Fragment() {
                 }
             }
         }
+
+        lifecycleScope.launch {
+            noteViewModel.layoutBackgroundColor.flowWithLifecycle(lifecycle).collectLatest { backgroundRes ->
+                binding?.linearLayout?.setBackgroundResource(backgroundRes)
+            }
+        }
+
+        // Observer для EditText
+        lifecycleScope.launch {
+            noteViewModel.editTextBackgroundColor.flowWithLifecycle(lifecycle).collectLatest { backgroundRes ->
+                binding?.nameEditText?.setBackgroundResource(backgroundRes)
+                binding?.textNoteEditText?.setBackgroundResource(backgroundRes)
+            }
+        }
     }
 
     private fun computeWindowSizeClasses(): WindowWidthSizeClass {
@@ -152,7 +166,7 @@ class NoteFragment : Fragment() {
 
     private fun getWindowSizeClass(dpWidth: Float): WindowWidthSizeClass {
         return when {
-            dpWidth < 400 -> WindowWidthSizeClass.Compact
+            dpWidth < 350 -> WindowWidthSizeClass.Compact
             dpWidth < 600 -> WindowWidthSizeClass.Medium
             else -> WindowWidthSizeClass.Expanded
         }
@@ -202,14 +216,26 @@ class NoteFragment : Fragment() {
             colorButton1.setOnClickListener {
                 Log.d("ButtonColors", "colorButton1\n")
                 noteViewModel.swapButtonColors(1, 4)
+                val currentMainButtonColor = noteViewModel.buttonColors.value.find { it.first == 4 }?.second
+                if (currentMainButtonColor != null) {
+                    noteViewModel.updateBackgroundsFromButton(currentMainButtonColor)
+                }
             }
             colorButton2.setOnClickListener {
                 Log.d("ButtonColors", "colorButton2\n")
                 noteViewModel.swapButtonColors(2, 4)
+                val currentMainButtonColor = noteViewModel.buttonColors.value.find { it.first == 4 }?.second
+                if (currentMainButtonColor != null) {
+                    noteViewModel.updateBackgroundsFromButton(currentMainButtonColor)
+                }
             }
             colorButton3.setOnClickListener {
                 Log.d("ButtonColors", "colorButton3\n")
                 noteViewModel.swapButtonColors(3, 4)
+                val currentMainButtonColor = noteViewModel.buttonColors.value.find { it.first == 4 }?.second
+                if (currentMainButtonColor != null) {
+                    noteViewModel.updateBackgroundsFromButton(currentMainButtonColor)
+                }
             }
         }
     }
