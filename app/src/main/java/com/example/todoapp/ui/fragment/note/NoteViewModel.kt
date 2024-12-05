@@ -32,10 +32,10 @@ class NoteViewModel @Inject constructor(
 
     private val _buttonColors = MutableStateFlow(
         listOf(
-            1 to R.drawable.button_background_pink,
+            1 to R.drawable.button_background_yellow,
             2 to R.drawable.button_background_light_blue,
-            3 to R.drawable.button_background_yellow,
-            4 to R.drawable.button_background_orange // mainButton
+            3 to R.drawable.button_background_pink,
+            4 to R.drawable.button_background_orange
         )
     )
     val buttonColors: StateFlow<List<Pair<Int, Int>>> = _buttonColors

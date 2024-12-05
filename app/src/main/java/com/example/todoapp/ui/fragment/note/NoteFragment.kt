@@ -126,9 +126,9 @@ class NoteFragment : Fragment() {
                 binding?.apply {
                     colors.forEach { (position, drawableRes) ->
                         when (position) {
-                            3 -> colorButton1.setBackgroundResource(drawableRes)
+                            1 -> colorButton1.setBackgroundResource(drawableRes)
                             2 -> colorButton2.setBackgroundResource(drawableRes)
-                            1 -> colorButton3.setBackgroundResource(drawableRes)
+                            3 -> colorButton3.setBackgroundResource(drawableRes)
                             4 -> mainButton.setBackgroundResource(drawableRes)
                         }
                     }
@@ -175,7 +175,7 @@ class NoteFragment : Fragment() {
             colorButton2.visibility = View.VISIBLE
             colorButton3.visibility = View.VISIBLE
 
-            ObjectAnimator.ofFloat(colorButton1, "translationX", -(buttonSpacing * 2).toFloat())
+            ObjectAnimator.ofFloat(colorButton3, "translationX", -(buttonSpacing * 2).toFloat())
                 .apply {
                     duration = 300
                     start()
@@ -185,7 +185,7 @@ class NoteFragment : Fragment() {
                     duration = 300
                     start()
                 }
-            ObjectAnimator.ofFloat(colorButton3, "translationX", -(buttonSpacing * 6).toFloat())
+            ObjectAnimator.ofFloat(colorButton1, "translationX", -(buttonSpacing * 6).toFloat())
                 .apply {
                     duration = 300
                     start()
@@ -198,7 +198,7 @@ class NoteFragment : Fragment() {
         binding?.apply {
             colorButton1.setOnClickListener {
                 Log.d("ButtonColors", "colorButton1\n")
-                noteViewModel.swapButtonColors(3, 4)
+                noteViewModel.swapButtonColors(1, 4)
             }
             colorButton2.setOnClickListener {
                 Log.d("ButtonColors", "colorButton2\n")
@@ -206,7 +206,7 @@ class NoteFragment : Fragment() {
             }
             colorButton3.setOnClickListener {
                 Log.d("ButtonColors", "colorButton3\n")
-                noteViewModel.swapButtonColors(1, 4)
+                noteViewModel.swapButtonColors(3, 4)
             }
         }
     }
