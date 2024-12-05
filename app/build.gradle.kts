@@ -87,5 +87,8 @@ android {
         implementation(libs.firebase.analytics)
 
         implementation(libs.material3.window)
+
+        implementation (libs.gson)
+
     }
 }

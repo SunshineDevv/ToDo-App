@@ -1,7 +1,6 @@
 package com.example.todoapp.ui.fragment.note
 
 import android.util.Log
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.todoapp.R
@@ -18,8 +17,7 @@ import javax.inject.Inject
 @HiltViewModel
 class NoteViewModel @Inject constructor(
     private val repository: NoteRepository,
-    application: android.app.Application
-) : AndroidViewModel(application) {
+) : ViewModel() {
 
     val nameNote = MutableStateFlow("")
     val textNote = MutableStateFlow("")
@@ -41,27 +39,16 @@ class NoteViewModel @Inject constructor(
     val buttonColors: StateFlow<List<Pair<Int, Int>>> = _buttonColors
 
     fun swapButtonColors(position1: Int, position2: Int) {
-        Log.d("ButtonColors", "Index1 = $position1 Index2 = $position2\n")
         _buttonColors.value = _buttonColors.value.toMutableList().apply {
             val index1 = position1 - 1
             val index2 = position2 - 1
 
-            Log.d("ButtonColors", "Index1 = $index1 Index2 = $index2\n")
             if (index1 != -1 && index2 != -1) {
                 val tempValue = this[index1].second
                 this[index1] = this[index1].copy(second = this[index2].second)
                 this[index2] = this[index2].copy(second = tempValue)
             }
         }
-        val readableColors = _buttonColors.value.map { (position, resource) ->
-            val resourceName = try {
-                getApplication<android.app.Application>().resources.getResourceName(resource)
-            } catch (e: Exception) {
-                "Unknown resource"
-            }
-            "Position: $position, Resource: $resourceName"
-        }
-        Log.d("ButtonColors", readableColors.joinToString(separator = "\n"))
     }
 
     fun addNote(nameNote: String, textNote: String, dateCreateNote: Long, dateUpdateNote: Long, noteColor: String) {

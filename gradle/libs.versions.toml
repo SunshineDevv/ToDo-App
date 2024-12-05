@@ -1,6 +1,7 @@
 [versions]
 agp = "8.5.0"
 firebaseBom = "33.5.0"
+gson = "2.10.1"
 hiltAndroid = "2.51.1"
 kotlin = "1.9.21"
 coreKtx = "1.13.1"
@@ -22,6 +23,7 @@ windowCoreAndroid = "1.3.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 material3-window = { module = "androidx.compose.material3:material3-window-size-class", version.ref = "material3Window" }
 androidx-navigation-fragment = { module = "androidx.navigation:navigation-fragment", version.ref = "navigationFragment" }
 androidx-navigation-safe-args-gradle-plugin = { module = "androidx.navigation:navigation-safe-args-gradle-plugin", version.ref = "navigationSafeArgsGradlePlugin" }

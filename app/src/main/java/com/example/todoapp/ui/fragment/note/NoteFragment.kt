@@ -64,7 +64,13 @@ class NoteFragment : Fragment() {
             val nameNote = binding?.nameEditText?.text.toString()
             val textNote = binding?.textNoteEditText?.text.toString()
 
-            noteViewModel.addNote(nameNote, textNote, dateCreateNote, 0,"color")
+            val backgroundId = noteViewModel.buttonColors.value.find { it.first == 4 }?.second
+            val backgroundResName = backgroundId?.let { it1 -> resources.getResourceName(it1) }
+            val resourceName = backgroundResName?.substringAfter(":drawable/")
+
+            if (resourceName != null) {
+                noteViewModel.addNote(nameNote, textNote, dateCreateNote, 0,resourceName)
+            }
             findNavController().navigate(R.id.navigate_noteFragment_to_listFragment)
         }
         val buttonSpacing = setupAdaptiveColorAnimation()
@@ -112,11 +118,7 @@ class NoteFragment : Fragment() {
                             .show()
                         noteViewModel.clearState()
                     }
-
-                    is State.Error -> {
-
-                    }
-
+                    is State.Error -> {}
                     else -> {}
                 }
             }
@@ -125,6 +127,7 @@ class NoteFragment : Fragment() {
             noteViewModel.buttonColors.flowWithLifecycle(lifecycle).collectLatest { colors ->
                 binding?.apply {
                     colors.forEach { (position, drawableRes) ->
+                        Log.d("ButtonColor", "position = $position drawablesRws = $drawableRes")
                         when (position) {
                             1 -> colorButton1.setBackgroundResource(drawableRes)
                             2 -> colorButton2.setBackgroundResource(drawableRes)
