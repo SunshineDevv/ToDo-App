@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.example.todoapp.R
 import com.example.todoapp.databinding.ItemHeaderBinding
 import com.example.todoapp.ui.fragment.note.NoteModel
 import com.example.todoapp.databinding.ItemNoteBinding
@@ -62,6 +63,21 @@ class ListAdapter(
             holder.binding.noteName.text = note.noteName
             holder.binding.dateCreateNote.text = note.noteDateCreate
             holder.binding.dateUpdateNote.text = note.noteDateUpdate
+
+            when(note.noteColor){
+                "button_background_orange" -> {
+                    holder.binding.layoutMain.setBackgroundResource(R.drawable.rounded_background_orange)
+                }
+                "button_background_yellow" -> {
+                    holder.binding.layoutMain.setBackgroundResource(R.drawable.rounded_background_yellow)
+                }
+                "button_background_pink" -> {
+                    holder.binding.layoutMain.setBackgroundResource(R.drawable.rounded_background_pink)
+                }
+                "button_background_light_blue" -> {
+                    holder.binding.layoutMain.setBackgroundResource(R.drawable.rounded_background_light_blue)
+                }
+            }
 
             holder.binding.checkBox.visibility = if (isSelectionMode) View.VISIBLE else View.GONE
             holder.binding.checkBox.isChecked = note.isSelected.value
