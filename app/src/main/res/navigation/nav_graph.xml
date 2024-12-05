@@ -50,5 +50,9 @@
             android:name="dateCrateNote"
             app:argType="string"
             android:defaultValue="null" />
+        <argument
+            android:name="noteColor"
+            app:argType="string"
+            android:defaultValue="null" />
     </fragment>
 </navigation>

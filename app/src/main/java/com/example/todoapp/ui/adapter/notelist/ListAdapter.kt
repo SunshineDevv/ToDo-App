@@ -132,7 +132,7 @@ class ListAdapter(
     private fun marginOnSecondElement(holder: RecyclerView.ViewHolder, position: Int){
         val layoutParams = holder.itemView.layoutParams as ViewGroup.MarginLayoutParams
         if (position != 0 && position % 2 == 0) {
-            layoutParams.topMargin = 50
+            layoutParams.topMargin = 100
         } else {
             layoutParams.topMargin = 0
         }

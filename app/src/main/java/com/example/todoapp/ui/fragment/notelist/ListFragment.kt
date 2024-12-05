@@ -184,11 +184,13 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
         val nameNote = note.noteName.toString()
         val textNote = note.noteText.toString()
         val dateCrateNote = note.noteDateCreate.toString()
+        val noteColor = note.noteColor.toString()
         val action = ListFragmentDirections.navigateListFragmentToUpdateNoteFragment(
             nameNote,
             textNote,
             idNote,
-            dateCrateNote
+            dateCrateNote,
+            noteColor
         )
         view?.let { Navigation.findNavController(it).navigate(action) }
     }
