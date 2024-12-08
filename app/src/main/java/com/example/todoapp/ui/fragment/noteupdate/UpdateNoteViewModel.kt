@@ -1,10 +1,8 @@
 package com.example.todoapp.ui.fragment.noteupdate
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.todoapp.R
-import com.example.todoapp.database.AppDatabase
 import com.example.todoapp.database.model.NoteDb
 import com.example.todoapp.database.repository.NoteRepository
 import com.example.todoapp.extensions.toDateInMillis
@@ -12,7 +10,7 @@ import com.example.todoapp.ui.fragment.State
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -25,10 +23,10 @@ class UpdateNoteViewModel @Inject constructor(
     val textNote = MutableStateFlow("")
 
     private val _state = MutableStateFlow<State>(State.Empty)
-    val state: StateFlow<State> = _state
+    val state = _state.asStateFlow()
 
     private val _isColorsVisible = MutableStateFlow(false)
-    val isColorsVisible: StateFlow<Boolean> = _isColorsVisible
+    val isColorsVisible = _isColorsVisible.asStateFlow()
 
     private val _buttonColors = MutableStateFlow(
         listOf(
@@ -38,7 +36,13 @@ class UpdateNoteViewModel @Inject constructor(
             4 to R.drawable.button_background_orange
         )
     )
-    val buttonColors: StateFlow<List<Pair<Int, Int>>> = _buttonColors
+    val buttonColors = _buttonColors.asStateFlow()
+
+    private val _layoutBackgroundColor = MutableStateFlow(R.drawable.rounded_background_orange)
+    val layoutBackgroundColor = _layoutBackgroundColor.asStateFlow()
+
+    private val _editTextBackgroundColor = MutableStateFlow(R.drawable.rounded_background_orange)
+    val editTextBackgroundColor = _editTextBackgroundColor.asStateFlow()
 
     fun swapButtonColors(position1: Int, position2: Int) {
         _buttonColors.value = _buttonColors.value.toMutableList().apply {
@@ -52,12 +56,6 @@ class UpdateNoteViewModel @Inject constructor(
             }
         }
     }
-
-    private val _layoutBackgroundColor = MutableStateFlow(R.drawable.rounded_background_orange)
-    val layoutBackgroundColor: StateFlow<Int> = _layoutBackgroundColor
-
-    private val _editTextBackgroundColor = MutableStateFlow(R.drawable.rounded_background_orange)
-    val editTextBackgroundColor: StateFlow<Int> = _editTextBackgroundColor
 
     private val buttonToBackgroundMap = mapOf(
         R.drawable.button_background_yellow to R.drawable.rounded_background_yellow,

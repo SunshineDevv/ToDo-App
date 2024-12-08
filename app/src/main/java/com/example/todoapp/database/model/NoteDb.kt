@@ -11,5 +11,5 @@ data class NoteDb(
     @ColumnInfo(name = "note_text") val noteText: String?,
     @ColumnInfo(name = "date_create") val dateCreate: Long?,
     @ColumnInfo(name = "date_update") val dateUpdate: Long?,
-    @ColumnInfo(name = "note_color", defaultValue = "#E8774E") val noteColor: String?
+    @ColumnInfo(name = "note_color", defaultValue = "button_background_orange") val noteColor: String?
 )

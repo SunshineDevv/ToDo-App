@@ -2,14 +2,18 @@ package com.example.todoapp.ui.fragment.noteupdate
 
 import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.VectorDrawable
 import android.os.Bundle
-import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
+import androidx.core.content.ContextCompat
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.flowWithLifecycle
@@ -40,7 +44,7 @@ class UpdateNoteFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        binding = DataBindingUtil.inflate(inflater,R.layout.fragment_update_note,container,false)
+        binding = DataBindingUtil.inflate(inflater, R.layout.fragment_update_note, container, false)
         binding?.viewmodel = updateNoteViewModel
         binding?.lifecycleOwner = viewLifecycleOwner
         return binding?.root
@@ -57,8 +61,8 @@ class UpdateNoteFragment : Fragment() {
         val dateCreateNote = args.dateCrateNote
         val noteColor = args.noteColor
 
-        if (updateNoteViewModel.nameNote.value.isNullOrEmpty() &&
-            updateNoteViewModel.textNote.value.isNullOrEmpty()
+        if (updateNoteViewModel.nameNote.value.isEmpty() &&
+            updateNoteViewModel.textNote.value.isEmpty()
         ) {
             setExistingData(nameNote, textNote, noteColor)
         }
@@ -67,10 +71,7 @@ class UpdateNoteFragment : Fragment() {
             val newNameNote = binding?.nameEditText?.text.toString()
             val newTextNote = binding?.textNoteEditText?.text.toString()
             val dateUpdateNote = System.currentTimeMillis().toFormattedDate()
-
-            val backgroundId = updateNoteViewModel.buttonColors.value.find { it.first == 4 }?.second
-            val backgroundResName = backgroundId?.let { it1 -> resources.getResourceName(it1) }
-            val resourceName = backgroundResName?.substringAfter(":drawable/")
+            val resourceName = getResourceName()
 
             if (resourceName != null) {
                 updateNoteViewModel.updateNote(
@@ -87,24 +88,11 @@ class UpdateNoteFragment : Fragment() {
 
         val buttonSpacing = setupAdaptiveColorAnimation()
 
-        binding?.mainButton?.setOnClickListener {
-            updateNoteViewModel.toggleColorsVisibility()
-            if(updateNoteViewModel.isColorsVisible.value){
-                updateNoteViewModel.setVisibleColor()
-                colorVisibleAnimation(buttonSpacing)
-            } else {
-                updateNoteViewModel.unsetVisibleColor()
-                colorInvisibleAnimation()
-            }
-        }
+        checkColorsVisibility(buttonSpacing)
 
-        lifecycleScope.launch {
-            updateNoteViewModel.isColorsVisible.flowWithLifecycle(lifecycle).collectLatest {
-                if (it){
-                    colorVisibleAnimation(buttonSpacing)
-                }
-            }
-        }
+        enableScrollEditTextInScrollView()
+
+        enableAdaptiveSizeOfButtons(buttonSpacing)
     }
 
     private fun setExistingData(nameNote: String, textNote: String, noteColor: String) {
@@ -118,19 +106,21 @@ class UpdateNoteFragment : Fragment() {
             updateNoteViewModel.state.flowWithLifecycle(lifecycle).collectLatest { state ->
                 when (state) {
                     is State.Success -> {
-                        Toast.makeText(requireContext(), state.successMsg, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), state.successMsg, Toast.LENGTH_SHORT)
+                            .show()
                         updateNoteViewModel.clearState()
                     }
+
                     is State.Error -> {}
                     else -> {}
                 }
             }
         }
+
         lifecycleScope.launch {
             updateNoteViewModel.buttonColors.flowWithLifecycle(lifecycle).collectLatest { colors ->
                 binding?.apply {
                     colors.forEach { (position, drawableRes) ->
-                        Log.d("ButtonColor", "position = $position drawablesRws = $drawableRes")
                         when (position) {
                             1 -> colorButton1.setBackgroundResource(drawableRes)
                             2 -> colorButton2.setBackgroundResource(drawableRes)
@@ -141,17 +131,20 @@ class UpdateNoteFragment : Fragment() {
                 }
             }
         }
+
         lifecycleScope.launch {
-            updateNoteViewModel.layoutBackgroundColor.flowWithLifecycle(lifecycle).collectLatest { backgroundRes ->
-                binding?.linearLayout?.setBackgroundResource(backgroundRes)
-            }
+            updateNoteViewModel.layoutBackgroundColor.flowWithLifecycle(lifecycle)
+                .collectLatest { backgroundRes ->
+                    binding?.linearLayout?.setBackgroundResource(backgroundRes)
+                }
         }
 
         lifecycleScope.launch {
-            updateNoteViewModel.editTextBackgroundColor.flowWithLifecycle(lifecycle).collectLatest { backgroundRes ->
-                binding?.nameEditText?.setBackgroundResource(backgroundRes)
-                binding?.textNoteEditText?.setBackgroundResource(backgroundRes)
-            }
+            updateNoteViewModel.editTextBackgroundColor.flowWithLifecycle(lifecycle)
+                .collectLatest { backgroundRes ->
+                    binding?.nameEditText?.setBackgroundResource(backgroundRes)
+                    binding?.textNoteEditText?.setBackgroundResource(backgroundRes)
+                }
         }
     }
 
@@ -173,7 +166,7 @@ class UpdateNoteFragment : Fragment() {
         }
     }
 
-    private fun setupAdaptiveColorAnimation(): Int{
+    private fun setupAdaptiveColorAnimation(): Int {
         val windowSizeClass = computeWindowSizeClasses()
         val buttonSpacing = when (windowSizeClass) {
             WindowWidthSizeClass.Compact -> 50
@@ -189,9 +182,8 @@ class UpdateNoteFragment : Fragment() {
     @SuppressLint("SoonBlockedPrivateApi", "UseCompatLoadingForDrawables")
     private fun colorVisibleAnimation(buttonSpacing: Int) {
         binding?.apply {
-            colorButton1.visibility = View.VISIBLE
-            colorButton2.visibility = View.VISIBLE
-            colorButton3.visibility = View.VISIBLE
+
+            enableButtonsVisibility()
 
             ObjectAnimator.ofFloat(colorButton3, "translationX", -(buttonSpacing * 2).toFloat())
                 .apply {
@@ -212,13 +204,10 @@ class UpdateNoteFragment : Fragment() {
         }
     }
 
-    private fun colorInvisibleAnimation(){
+    private fun colorInvisibleAnimation() {
         binding?.apply {
 
-            colorButton1.isClickable = false
-            colorButton2.isClickable = false
-            colorButton3.isClickable = false
-            mainButton.isClickable = false
+            disableButtonsClickable()
 
             ObjectAnimator.ofFloat(colorButton1, "translationX", 0f)
                 .apply {
@@ -238,14 +227,10 @@ class UpdateNoteFragment : Fragment() {
 
             lifecycleScope.launch {
                 delay(300L)
-                colorButton1.visibility = View.GONE
-                colorButton2.visibility = View.GONE
-                colorButton3.visibility = View.GONE
 
-                colorButton1.isClickable = true
-                colorButton2.isClickable = true
-                colorButton3.isClickable = true
-                mainButton.isClickable = true
+                disableButtonsVisibility()
+
+                enableButtonsClickable()
             }
         }
     }
@@ -253,29 +238,143 @@ class UpdateNoteFragment : Fragment() {
     private fun setupColorButtonListeners() {
         binding?.apply {
             colorButton1.setOnClickListener {
-                Log.d("ButtonColors", "colorButton1\n")
                 updateNoteViewModel.swapButtonColors(1, 4)
-                val currentMainButtonColor = updateNoteViewModel.buttonColors.value.find { it.first == 4 }?.second
-                if (currentMainButtonColor != null) {
-                    updateNoteViewModel.updateBackgroundsFromButton(currentMainButtonColor)
-                }
+                updateBackgrounds()
             }
             colorButton2.setOnClickListener {
-                Log.d("ButtonColors", "colorButton2\n")
                 updateNoteViewModel.swapButtonColors(2, 4)
-                val currentMainButtonColor = updateNoteViewModel.buttonColors.value.find { it.first == 4 }?.second
-                if (currentMainButtonColor != null) {
-                    updateNoteViewModel.updateBackgroundsFromButton(currentMainButtonColor)
-                }
+                updateBackgrounds()
             }
             colorButton3.setOnClickListener {
-                Log.d("ButtonColors", "colorButton3\n")
                 updateNoteViewModel.swapButtonColors(3, 4)
-                val currentMainButtonColor = updateNoteViewModel.buttonColors.value.find { it.first == 4 }?.second
-                if (currentMainButtonColor != null) {
-                    updateNoteViewModel.updateBackgroundsFromButton(currentMainButtonColor)
+                updateBackgrounds()
+            }
+        }
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    private fun enableScrollEditTextInScrollView() {
+        binding?.textNoteEditText?.setOnTouchListener { v, event ->
+            if (binding?.textNoteEditText?.hasFocus() == true) {
+                v.parent.requestDisallowInterceptTouchEvent(true)
+                when (event.action and MotionEvent.ACTION_MASK) {
+                    MotionEvent.ACTION_SCROLL -> {
+                        v.parent.requestDisallowInterceptTouchEvent(false)
+                        return@setOnTouchListener true
+                    }
                 }
             }
+            false
+        }
+    }
+
+    private fun enableAdaptiveSizeOfButtons(buttonSpacing: Int) {
+        binding?.apply {
+            if (buttonSpacing == 150) {
+                val layoutParamsMain = mainButton.layoutParams
+                layoutParamsMain.width = 120
+                layoutParamsMain.height = 120
+                mainButton.layoutParams = layoutParamsMain
+
+                val layoutParamsColor1 = colorButton1.layoutParams
+                layoutParamsColor1.width = 120
+                layoutParamsColor1.height = 120
+                colorButton1.layoutParams = layoutParamsColor1
+
+                val layoutParamsColor2 = colorButton2.layoutParams
+                layoutParamsColor2.width = 120
+                layoutParamsColor2.height = 120
+                colorButton2.layoutParams = layoutParamsColor2
+
+                val layoutParamsColor3 = colorButton3.layoutParams
+                layoutParamsColor3.width = 120
+                layoutParamsColor3.height = 120
+                colorButton3.layoutParams = layoutParamsColor3
+
+                val layoutParamAdd = updateNoteButton.layoutParams
+                layoutParamAdd.width = 250
+                layoutParamAdd.height = 250
+                updateNoteButton.layoutParams = layoutParamAdd
+
+                val drawable = ContextCompat.getDrawable(
+                    requireContext(),
+                    R.drawable.baseline_done_52
+                ) as VectorDrawable
+                val bitmap = Bitmap.createBitmap(132, 132, Bitmap.Config.ARGB_8888)
+                val canvas = Canvas(bitmap)
+                drawable.setBounds(0, 0, canvas.width, canvas.height)
+                drawable.draw(canvas)
+                updateNoteButton.setImageBitmap(bitmap)
+            }
+        }
+    }
+
+    private fun getResourceName(): String? {
+        val backgroundId = updateNoteViewModel.buttonColors.value.find { it.first == 4 }?.second
+        val backgroundResName = backgroundId?.let { it1 -> resources.getResourceName(it1) }
+        return backgroundResName?.substringAfter(":drawable/")
+    }
+
+    private fun checkColorsVisibility(buttonSpacing: Int) {
+        binding?.mainButton?.setOnClickListener {
+            updateNoteViewModel.toggleColorsVisibility()
+            if (updateNoteViewModel.isColorsVisible.value) {
+                updateNoteViewModel.setVisibleColor()
+                colorVisibleAnimation(buttonSpacing)
+            } else {
+                updateNoteViewModel.unsetVisibleColor()
+                colorInvisibleAnimation()
+            }
+        }
+
+        lifecycleScope.launch {
+            updateNoteViewModel.isColorsVisible.flowWithLifecycle(lifecycle).collectLatest {
+                if (it) {
+                    colorVisibleAnimation(buttonSpacing)
+                }
+            }
+        }
+    }
+
+    private fun updateBackgrounds() {
+        val currentMainButtonColor =
+            updateNoteViewModel.buttonColors.value.find { it.first == 4 }?.second
+        if (currentMainButtonColor != null) {
+            updateNoteViewModel.updateBackgroundsFromButton(currentMainButtonColor)
+        }
+    }
+
+    private fun enableButtonsClickable() {
+        binding?.apply {
+            colorButton1.isClickable = true
+            colorButton2.isClickable = true
+            colorButton3.isClickable = true
+            mainButton.isClickable = true
+        }
+    }
+
+    private fun disableButtonsClickable() {
+        binding?.apply {
+            colorButton1.isClickable = false
+            colorButton2.isClickable = false
+            colorButton3.isClickable = false
+            mainButton.isClickable = false
+        }
+    }
+
+    private fun enableButtonsVisibility() {
+        binding?.apply {
+            colorButton1.visibility = View.VISIBLE
+            colorButton2.visibility = View.VISIBLE
+            colorButton3.visibility = View.VISIBLE
+        }
+    }
+
+    private fun disableButtonsVisibility() {
+        binding?.apply {
+            colorButton1.visibility = View.GONE
+            colorButton2.visibility = View.GONE
+            colorButton3.visibility = View.GONE
         }
     }
 }

@@ -1,6 +1,5 @@
 package com.example.todoapp.ui.fragment.note
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.todoapp.R
@@ -10,7 +9,7 @@ import com.example.todoapp.ui.fragment.State
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -23,10 +22,10 @@ class NoteViewModel @Inject constructor(
     val textNote = MutableStateFlow("")
 
     private val _state = MutableStateFlow<State>(State.Empty)
-    val state: StateFlow<State> = _state
+    val state = _state.asStateFlow()
 
     private val _isColorsVisible = MutableStateFlow(false)
-    val isColorsVisible: StateFlow<Boolean> = _isColorsVisible
+    val isColorsVisible = _isColorsVisible.asStateFlow()
 
     private val _buttonColors = MutableStateFlow(
         listOf(
@@ -36,13 +35,13 @@ class NoteViewModel @Inject constructor(
             4 to R.drawable.button_background_orange
         )
     )
-    val buttonColors: StateFlow<List<Pair<Int, Int>>> = _buttonColors
+    val buttonColors = _buttonColors.asStateFlow()
 
     private val _layoutBackgroundColor = MutableStateFlow(R.drawable.rounded_background_orange)
-    val layoutBackgroundColor: StateFlow<Int> = _layoutBackgroundColor
+    val layoutBackgroundColor = _layoutBackgroundColor.asStateFlow()
 
     private val _editTextBackgroundColor = MutableStateFlow(R.drawable.rounded_background_orange)
-    val editTextBackgroundColor: StateFlow<Int> = _editTextBackgroundColor
+    val editTextBackgroundColor = _editTextBackgroundColor.asStateFlow()
 
     private val buttonToBackgroundMap = mapOf(
         R.drawable.button_background_yellow to R.drawable.rounded_background_yellow,
@@ -52,7 +51,8 @@ class NoteViewModel @Inject constructor(
     )
 
     fun updateBackgroundsFromButton(buttonDrawableRes: Int) {
-        val newBackgroundRes = buttonToBackgroundMap[buttonDrawableRes] ?: R.drawable.rounded_background_orange
+        val newBackgroundRes =
+            buttonToBackgroundMap[buttonDrawableRes] ?: R.drawable.rounded_background_orange
         _layoutBackgroundColor.value = newBackgroundRes
         _editTextBackgroundColor.value = newBackgroundRes
     }
@@ -70,7 +70,13 @@ class NoteViewModel @Inject constructor(
         }
     }
 
-    fun addNote(nameNote: String, textNote: String, dateCreateNote: Long, dateUpdateNote: Long, noteColor: String) {
+    fun addNote(
+        nameNote: String,
+        textNote: String,
+        dateCreateNote: Long,
+        dateUpdateNote: Long,
+        noteColor: String
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             repository.upsert(
                 NoteDb(
@@ -89,16 +95,15 @@ class NoteViewModel @Inject constructor(
         _state.value = State.Empty
     }
 
-    fun setVisibleColor(){
+    fun setVisibleColor() {
         _isColorsVisible.value = true
     }
 
-    fun unsetVisibleColor(){
+    fun unsetVisibleColor() {
         _isColorsVisible.value = false
     }
 
     fun toggleColorsVisibility() {
         _isColorsVisible.value = !_isColorsVisible.value
     }
-
 }

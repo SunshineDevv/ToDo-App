@@ -1,10 +1,7 @@
 package com.example.todoapp.ui.fragment.notelist
 
-import android.content.Context
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.todoapp.database.AppDatabase
 import com.example.todoapp.database.model.NoteDb
 import com.example.todoapp.database.repository.NoteRepository
 import com.example.todoapp.extensions.observeLiveData
@@ -15,7 +12,7 @@ import com.example.todoapp.ui.fragment.note.NoteModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -25,20 +22,19 @@ class NoteListViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val _notes = MutableStateFlow<List<NoteModel>>(emptyList())
-    val notes: StateFlow<List<NoteModel>> = _notes
+    val notes = _notes.asStateFlow()
 
     private val _state = MutableStateFlow<State>(State.Empty)
-    val state: StateFlow<State> = _state
+    val state = _state.asStateFlow()
 
-    private val _isSelectionMode = MutableStateFlow<Boolean>(false)
-    val isSelectionMode: StateFlow<Boolean> = _isSelectionMode
+    private val _isSelectionMode = MutableStateFlow(false)
+    val isSelectionMode = _isSelectionMode.asStateFlow()
 
     fun onStart() {
         observeLiveData(repository.allNotes, ::handleNotesChanged)
     }
 
     private fun handleNotesChanged(noteDbs: List<NoteDb>) {
-        Log.i("CHECK_LOG", "observer heita")
         val sortedList = noteDbs.sortedByDescending {
             it.dateUpdate ?: it.dateCreate
         }.toNoteModelList()
@@ -62,7 +58,7 @@ class NoteListViewModel @Inject constructor(
                 repository.delete(note.toNoteDbModel())
             }
         }
-        if (noteList.size == 1){
+        if (noteList.size == 1) {
             _state.value = State.Success("Note was deleted!")
         } else {
             _state.value = State.Success("Notes were deleted!")
@@ -75,12 +71,9 @@ class NoteListViewModel @Inject constructor(
 
     fun enableSelectionMode() {
         _isSelectionMode.value = true
-        Log.i("SELECTIONN", "Enable: ${_isSelectionMode.value}")
     }
 
     fun disableSelectionMode() {
         _isSelectionMode.value = false
-        Log.i("SELECTIONN", "Disable: ${_isSelectionMode.value}")
-
     }
 }

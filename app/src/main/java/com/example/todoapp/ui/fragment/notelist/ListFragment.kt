@@ -140,7 +140,8 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
             noteListViewModel.state.flowWithLifecycle(lifecycle).collectLatest { state ->
                 when (state) {
                     is State.Success -> {
-                        Toast.makeText(requireContext(), state.successMsg, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), state.successMsg, Toast.LENGTH_SHORT)
+                            .show()
                         noteListViewModel.clearState()
                     }
 
@@ -154,7 +155,7 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
         }
     }
 
-    private fun subscribeToObservables(){
+    private fun subscribeToObservables() {
         lifecycleScope.launch {
             noteListViewModel.notes.flowWithLifecycle(lifecycle).collectLatest { notes ->
                 listAdapter.updateNoteList(notes)
@@ -192,7 +193,7 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
             dateCrateNote,
             noteColor
         )
-        view?.let { Navigation.findNavController(it).navigate(action) }
+        findNavController().navigate(action)
     }
 
     override fun onLongClickedItem(note: NoteModel) {
