@@ -1,6 +1,7 @@
 package com.example.todoapp.ui.adapter.notelist
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -29,7 +30,6 @@ class ListAdapter(
     class NoteViewHolder(val binding: ItemNoteBinding) : RecyclerView.ViewHolder(binding.root)
 
     override fun getItemViewType(position: Int): Int {
-        // Определение типа элемента: 0 для хедера, 1 для заметок
         return if (position == 0) VIEW_TYPE_HEADER else VIEW_TYPE_NOTE
     }
 
@@ -129,13 +129,21 @@ class ListAdapter(
         fun isCheckedItem(note: NoteModel)
     }
 
-    private fun marginOnSecondElement(holder: RecyclerView.ViewHolder, position: Int){
+    private fun marginOnSecondElement(holder: RecyclerView.ViewHolder, position: Int) {
         val layoutParams = holder.itemView.layoutParams as ViewGroup.MarginLayoutParams
+        val marginInDp = 32
+        val marginInPx = dpToPx(marginInDp, holder.itemView.context)
+
         if (position != 0 && position % 2 == 0) {
-            layoutParams.topMargin = 100
+            layoutParams.topMargin = marginInPx
         } else {
             layoutParams.topMargin = 0
         }
+
         holder.itemView.layoutParams = layoutParams
+    }
+
+    private fun dpToPx(dp: Int, context: Context): Int {
+        return (dp * context.resources.displayMetrics.density).toInt()
     }
 }
