@@ -11,15 +11,20 @@
     </data>
 
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fillViewport="true"
-        android:scrollbars="vertical"
+        android:clickable="true"
         android:fadeScrollbars="false"
+        android:fastScrollAlwaysVisible="true"
+        android:fastScrollEnabled="true"
+        android:fillViewport="true"
+        android:focusable="true"
+        android:layoutDirection="ltr"
+        android:scrollbarStyle="outsideOverlay"
         android:scrollbarThumbVertical="@drawable/custom_scrollbar_thumb"
         android:scrollbarTrackVertical="@drawable/custom_scrollbar_track"
-        android:scrollbarStyle="insideOverlay"
-        android:layoutDirection="ltr"
+        android:scrollbars="vertical"
         tools:context=".ui.fragment.note.NoteFragment">
 
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -33,7 +38,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
                 android:gravity="center"
-                android:text="Add note"
+                android:text="@string/add_note"
                 android:textColor="@color/white"
                 android:textSize="48dp"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -114,10 +119,10 @@
                 android:layout_marginBottom="24dp"
                 android:background="@drawable/rounded_background_orange"
                 android:orientation="vertical"
-                app:layout_constraintHeight_default="percent"
-                app:layout_constraintHeight_percent="0.6"
                 app:layout_constraintBottom_toTopOf="@+id/addNewNoteButton"
                 app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHeight_default="percent"
+                app:layout_constraintHeight_percent="0.6"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/layoutWithColorButtons">
 
@@ -127,7 +132,7 @@
                     android:layout_height="wrap_content"
                     android:layout_margin="8dp"
                     android:background="@color/orange"
-                    android:hint="Note name"
+                    android:hint="@string/note_name"
                     android:maxLines="2"
                     android:overScrollMode="always"
                     android:padding="12dp"
@@ -150,7 +155,7 @@
                     android:layout_margin="8dp"
                     android:background="@color/orange"
                     android:gravity="top|start"
-                    android:hint="Note text"
+                    android:hint="@string/note_text"
                     android:inputType="textMultiLine"
                     android:lineSpacingExtra="8dp"
                     android:overScrollMode="always"
@@ -175,5 +180,7 @@
                 app:layout_constraintTop_toBottomOf="@+id/linearLayout" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
+
     </androidx.core.widget.NestedScrollView>
+
 </layout>

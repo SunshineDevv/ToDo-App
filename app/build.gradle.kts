@@ -90,5 +90,6 @@ android {
 
         implementation (libs.gson)
 
+        implementation(libs.androidx.core.splashscreen)
     }
 }
