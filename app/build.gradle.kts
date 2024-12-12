@@ -85,6 +85,7 @@ android {
         implementation(platform(libs.firebase.bom))
         implementation(libs.firebase.crashlytics)
         implementation(libs.firebase.analytics)
+        implementation(libs.firebase.auth)
 
         implementation(libs.material3.window)
 
@@ -92,4 +93,11 @@ android {
 
         implementation(libs.androidx.core.splashscreen)
     }
+}
+dependencies {
+    implementation(libs.androidx.appcompat)
+    implementation(libs.material)
+    implementation(libs.androidx.activity)
+    implementation(libs.androidx.constraintlayout)
+    implementation(libs.firebase.auth)
 }
