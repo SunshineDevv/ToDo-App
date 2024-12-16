@@ -15,14 +15,12 @@ import androidx.core.view.MenuProvider
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import androidx.navigation.Navigation
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.window.layout.WindowMetricsCalculator
 import com.example.todoapp.ui.fragment.note.NoteModel
 import com.example.todoapp.R
 import com.example.todoapp.databinding.FragmentListBinding
-import com.example.todoapp.extensions.observe
 import com.example.todoapp.ui.adapter.notelist.ListAdapter
 import com.example.todoapp.ui.fragment.State
 import dagger.hilt.android.AndroidEntryPoint
@@ -81,6 +79,7 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
         listAdapter = ListAdapter(this)
         setupAdaptiveLayout()
         binding?.recyclerView?.adapter = listAdapter
+        noteListViewModel.syncNotesToFirestore()
     }
 
     private fun setupAdaptiveLayout() {
@@ -187,9 +186,9 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
         val dateCrateNote = note.noteDateCreate.toString()
         val noteColor = note.noteColor.toString()
         val action = ListFragmentDirections.navigateListFragmentToUpdateNoteFragment(
+            idNote,
             nameNote,
             textNote,
-            idNote,
             dateCrateNote,
             noteColor
         )

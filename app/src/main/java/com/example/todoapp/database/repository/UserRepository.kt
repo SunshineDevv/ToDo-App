@@ -1,8 +1,6 @@
 package com.example.todoapp.database.repository
 
 import com.example.todoapp.database.dao.UserDao
-import com.example.todoapp.database.dao.UserWithNotesDao
-import com.example.todoapp.database.model.NoteDb
 import com.example.todoapp.database.model.UserDb
 import javax.inject.Inject
 

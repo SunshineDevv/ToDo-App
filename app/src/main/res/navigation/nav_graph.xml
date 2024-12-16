@@ -44,8 +44,7 @@
             android:defaultValue="null" />
         <argument
             android:name="idNote"
-            app:argType="long"
-            android:defaultValue="0L" />
+            app:argType="string" />
         <argument
             android:name="dateCrateNote"
             app:argType="string"

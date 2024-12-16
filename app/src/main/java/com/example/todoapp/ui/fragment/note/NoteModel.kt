@@ -3,7 +3,7 @@ package com.example.todoapp.ui.fragment.note
 import kotlinx.coroutines.flow.MutableStateFlow
 
 data class NoteModel(
-    val id: Long,
+    val id: String,
     val userOwnerId: String?,
     val noteText: String?,
     val noteName: String?,

@@ -25,6 +25,7 @@ import com.example.todoapp.R
 import com.example.todoapp.databinding.FragmentUpdateNoteBinding
 import com.example.todoapp.extensions.toFormattedDate
 import com.example.todoapp.ui.fragment.State
+import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -72,16 +73,25 @@ class UpdateNoteFragment : Fragment() {
             val newTextNote = binding?.textNoteEditText?.text.toString()
             val dateUpdateNote = System.currentTimeMillis().toFormattedDate()
             val resourceName = getResourceName()
-
-            if (resourceName != null) {
+            val userOwnerId = FirebaseAuth.getInstance().currentUser?.uid
+            if (resourceName != null && userOwnerId != null) {
                 updateNoteViewModel.updateNote(
                     idNote,
+                    userOwnerId,
                     newNameNote,
                     newTextNote,
                     dateCreateNote,
                     dateUpdateNote,
                     resourceName
                 )
+                updateNoteViewModel.updateNoteInFirestore(
+                    idNote,
+                    userOwnerId,
+                    newNameNote,
+                    newTextNote,
+                    dateCreateNote,
+                    dateUpdateNote,
+                    resourceName)
             }
             findNavController().navigate(R.id.navigate_updateNoteFragment_to_listFragment)
         }

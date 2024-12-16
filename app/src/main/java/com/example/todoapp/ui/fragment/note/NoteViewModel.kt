@@ -6,6 +6,8 @@ import com.example.todoapp.R
 import com.example.todoapp.database.model.NoteDb
 import com.example.todoapp.database.repository.NoteRepository
 import com.example.todoapp.ui.fragment.State
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,6 +19,8 @@ import javax.inject.Inject
 class NoteViewModel @Inject constructor(
     private val repository: NoteRepository,
 ) : ViewModel() {
+
+    private val firestore = FirebaseFirestore.getInstance()
 
     val nameNote = MutableStateFlow("")
     val textNote = MutableStateFlow("")
@@ -71,6 +75,8 @@ class NoteViewModel @Inject constructor(
     }
 
     fun addNote(
+        noteId: String,
+        userOwnerId: String,
         nameNote: String,
         textNote: String,
         dateCreateNote: Long,
@@ -80,6 +86,8 @@ class NoteViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             repository.upsert(
                 NoteDb(
+                    id = noteId,
+                    userOwnerId = userOwnerId,
                     noteName = nameNote,
                     noteText = textNote,
                     dateCreate = dateCreateNote,
@@ -89,6 +97,35 @@ class NoteViewModel @Inject constructor(
             )
         }
         _state.value = State.Success("New note was added!")
+    }
+
+    fun addNoteToFirestore(
+        noteId: String,
+        noteOwnerId: String,
+        nameNote: String,
+        textNote: String,
+        dateCreateNote: Long,
+        dateUpdateNote: Long,
+        noteColor: String
+    ) {
+        val note = hashMapOf(
+            "nameNote" to nameNote,
+            "textNote" to textNote,
+            "dateCreateNote" to dateCreateNote,
+            "dateUpdateNote" to dateUpdateNote,
+            "noteColor" to noteColor
+        )
+        firestore.collection("users")
+            .document(noteOwnerId)
+            .collection("notes")
+            .document(noteId)
+            .set(note)
+            .addOnSuccessListener {
+                _state.value = State.Success("Note added to Firestore!")
+            }
+            .addOnFailureListener {
+                _state.value = State.Error("Failed to add note: ${it.message}")
+            }
     }
 
     fun clearState() {
