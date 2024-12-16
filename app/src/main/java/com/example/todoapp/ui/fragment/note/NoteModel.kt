@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 
 data class NoteModel(
     val id: Long,
+    val userOwnerId: String?,
     val noteText: String?,
     val noteName: String?,
     val noteDateCreate: String?,

@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "notes")
 data class NoteDb(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @ColumnInfo(name = "note_user_owner", defaultValue = "0") val userOwnerId: String?,
     @ColumnInfo(name = "note_name") val noteName: String?,
     @ColumnInfo(name = "note_text") val noteText: String?,
     @ColumnInfo(name = "date_create") val dateCreate: Long?,

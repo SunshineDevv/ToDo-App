@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Room
 import com.example.todoapp.database.AppDatabase
 import com.example.todoapp.database.dao.NoteDao
+import com.example.todoapp.database.dao.UserDao
+import com.example.todoapp.database.dao.UserWithNotesDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -28,5 +30,15 @@ class DbModule {
     @Provides
     fun provideNoteDao(database: AppDatabase): NoteDao {
         return database.getNoteDao()
+    }
+
+    @Provides
+    fun provideUserDao(database: AppDatabase): UserDao {
+        return database.getUserDao()
+    }
+
+    @Provides
+    fun UserWithNotesDao(database: AppDatabase): UserWithNotesDao {
+        return database.getUserWithNotesDao()
     }
 }

@@ -9,6 +9,7 @@ import java.util.Locale
 fun NoteDb.toNoteUIModel(): NoteModel {
     return NoteModel(
         id = id,
+        userOwnerId =userOwnerId,
         noteName = noteName,
         noteText = noteText,
         noteDateCreate = dateCreate?.toFormattedDate(),
@@ -20,6 +21,7 @@ fun NoteDb.toNoteUIModel(): NoteModel {
 fun NoteModel.toNoteDbModel(): NoteDb {
     return NoteDb(
         id = id,
+        userOwnerId = userOwnerId,
         noteName = noteName,
         noteText = noteText,
         dateCreate = noteDateCreate?.toDateInMillis(),

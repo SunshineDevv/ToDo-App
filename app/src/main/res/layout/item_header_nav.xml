@@ -16,6 +16,7 @@
         app:shapeAppearanceOverlay="@style/roundedImageView"/>
 
     <TextView
+        android:id="@+id/userNameTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="SunshineDevv"
@@ -24,6 +25,7 @@
         android:textStyle="bold"/>
 
     <TextView
+        android:id="@+id/userEmailTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="email@gmail.com"

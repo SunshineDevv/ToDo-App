@@ -1,6 +1,8 @@
 package com.example.todoapp.ui.activity
 
+import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
@@ -17,13 +19,17 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupWithNavController
 import com.example.todoapp.R
 import com.example.todoapp.databinding.ActivityMainBinding
+import com.example.todoapp.databinding.ItemHeaderNavBinding
 import com.google.android.material.navigation.NavigationView
+import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
 
     private var binding: ActivityMainBinding? = null
+
+    private val firebaseAuth = FirebaseAuth.getInstance()
 
     private lateinit var drawerToggle: ActionBarDrawerToggle
 
@@ -34,6 +40,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         setContentView(binding?.root)
 
         setupActionBar()
+
+        setupHeaderOfDrawer()
+
+        setupLogOut()
 
         binding?.navigationView?.setNavigationItemSelectedListener(this)
 
@@ -47,10 +57,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
             }
         }
         handleBackPress()
-
-        binding?.navLogout?.setOnClickListener {
-            Toast.makeText(this, "Logout", Toast.LENGTH_SHORT).show()
-        }
     }
 
     private fun setupActionBar() {
@@ -143,6 +149,24 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         )
         binding?.drawerLayout?.addDrawerListener(drawerToggle)
         drawerToggle.syncState()
+    }
+
+    private fun setupHeaderOfDrawer(){
+        val headerView = binding?.navigationView?.getHeaderView(0)
+
+        val headerBinding = headerView?.let { ItemHeaderNavBinding.bind(it) }
+
+        headerBinding?.userNameTextView?.text = firebaseAuth.currentUser?.displayName
+        headerBinding?.userEmailTextView?.text = firebaseAuth.currentUser?.email
+    }
+
+    private fun setupLogOut(){
+        binding?.navLogout?.setOnClickListener{
+            FirebaseAuth.getInstance().signOut()
+            val intent = Intent(this, AuthActivity::class.java)
+            startActivity(intent)
+            finish()
+        }
     }
 
     override fun onDestroy() {
