@@ -33,7 +33,7 @@ class UpdateNoteViewModel @Inject constructor(
 
     private val _buttonColors = MutableStateFlow(
         listOf(
-            1 to R.drawable.button_background_yellow,
+            1 to R.drawable.button_background_green,
             2 to R.drawable.button_background_light_blue,
             3 to R.drawable.button_background_pink,
             4 to R.drawable.button_background_orange
@@ -61,7 +61,7 @@ class UpdateNoteViewModel @Inject constructor(
     }
 
     private val buttonToBackgroundMap = mapOf(
-        R.drawable.button_background_yellow to R.drawable.rounded_background_yellow,
+        R.drawable.button_background_green to R.drawable.rounded_background_green,
         R.drawable.button_background_light_blue to R.drawable.rounded_background_light_blue,
         R.drawable.button_background_pink to R.drawable.rounded_background_pink,
         R.drawable.button_background_orange to R.drawable.rounded_background_orange
@@ -99,7 +99,7 @@ class UpdateNoteViewModel @Inject constructor(
 
     private val resourceNameToDrawableMap = mapOf(
         "button_background_orange" to R.drawable.button_background_orange,
-        "button_background_yellow" to R.drawable.button_background_yellow,
+        "button_background_green" to R.drawable.button_background_green,
         "button_background_pink" to R.drawable.button_background_pink,
         "button_background_light_blue" to R.drawable.button_background_light_blue
     )

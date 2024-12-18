@@ -27,30 +27,37 @@ class LoginViewModel @Inject constructor(
 
     fun logInUser(email: String, password: String) {
         auth = Firebase.auth
+        if (email.trim().isNotEmpty() && password.trim().isNotEmpty()){
+            auth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        _logInState.value = AuthenticationState.Success
+                    } else {
+                        when (val exception = task.exception) {
+                            is FirebaseAuthInvalidCredentialsException -> {
+                                _logInState.value =
+                                    AuthenticationState.Error("Invalid credentials. Check your email and password.")
+                            }
 
-        auth.signInWithEmailAndPassword(email, password)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    _logInState.value = AuthenticationState.Success
-                } else {
-                    when (val exception = task.exception) {
-                        is FirebaseAuthInvalidCredentialsException -> {
-                            _logInState.value =
-                                AuthenticationState.Error("Invalid credentials. Check your email and password.")
-                        }
+                            is FirebaseAuthInvalidUserException -> {
+                                _logInState.value =
+                                    AuthenticationState.Error("User does not exist. Please register.")
+                            }
 
-                        is FirebaseAuthInvalidUserException -> {
-                            _logInState.value =
-                                AuthenticationState.Error("User does not exist. Please register.")
-                        }
-
-                        else -> {
-                            _logInState.value =
-                                AuthenticationState.Error("Authentication failed: ${exception?.message}")
+                            else -> {
+                                _logInState.value =
+                                    AuthenticationState.Error("Authentication failed: ${exception?.message}")
+                            }
                         }
                     }
                 }
-            }
+        } else if (email.isEmpty() && password.isEmpty()){
+            _logInState.value = AuthenticationState.Error("Credential fields cannot be empty")
+        } else if (password.isEmpty()){
+            _logInState.value = AuthenticationState.Error("Password field cannot be empty")
+        } else {
+            _logInState.value = AuthenticationState.Error("Email field cannot be empty")
+        }
     }
 
     fun clearState() {

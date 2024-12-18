@@ -14,6 +14,7 @@ import androidx.navigation.fragment.findNavController
 import com.example.todoapp.R
 import com.example.todoapp.databinding.FragmentSignUpBinding
 import com.example.todoapp.ui.fragment.auth.AuthenticationState
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -43,10 +44,11 @@ class SignUpFragment : Fragment() {
 
         binding?.signUpButton?.setOnClickListener {
             val email = binding?.emailEditText?.text.toString().trim()
-            val password = binding?.confirmPasswordEditText?.text.toString().trim()
+            val password = binding?.passwordEditText?.text.toString().trim()
             val userName = binding?.nameEditText?.text.toString().trim()
+            val confirmPassword = binding?.confirmPasswordEditText?.text.toString().trim()
 
-            signUpViewModel.registerNewUser(email, password, userName)
+            signUpViewModel.registerNewUser(email, password, userName, confirmPassword)
         }
 
         binding?.logInTextView?.setOnClickListener {
@@ -66,11 +68,11 @@ class SignUpFragment : Fragment() {
                         }
 
                         is AuthenticationState.Error -> {
-                            Toast.makeText(
-                                requireContext(),
-                                registrationState.errorMsg,
-                                Toast.LENGTH_LONG
-                            ).show()
+                            view?.let {
+                                Snackbar.make(it, registrationState.errorMsg, Snackbar.LENGTH_SHORT)
+                                    .setAction("OK"){}
+                                    .show()
+                            }
                             signUpViewModel.clearState()
                         }
 

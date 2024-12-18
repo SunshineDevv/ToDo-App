@@ -170,7 +170,7 @@ class UpdateNoteFragment : Fragment() {
 
     private fun getWindowSizeClass(dpWidth: Float): WindowWidthSizeClass {
         return when {
-            dpWidth < 350 -> WindowWidthSizeClass.Compact
+            dpWidth < 400 -> WindowWidthSizeClass.Compact
             dpWidth < 600 -> WindowWidthSizeClass.Medium
             else -> WindowWidthSizeClass.Expanded
         }

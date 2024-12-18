@@ -6,7 +6,6 @@ import com.example.todoapp.R
 import com.example.todoapp.database.model.NoteDb
 import com.example.todoapp.database.repository.NoteRepository
 import com.example.todoapp.ui.fragment.State
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -33,7 +32,7 @@ class NoteViewModel @Inject constructor(
 
     private val _buttonColors = MutableStateFlow(
         listOf(
-            1 to R.drawable.button_background_yellow,
+            1 to R.drawable.button_background_green,
             2 to R.drawable.button_background_light_blue,
             3 to R.drawable.button_background_pink,
             4 to R.drawable.button_background_orange
@@ -48,7 +47,7 @@ class NoteViewModel @Inject constructor(
     val editTextBackgroundColor = _editTextBackgroundColor.asStateFlow()
 
     private val buttonToBackgroundMap = mapOf(
-        R.drawable.button_background_yellow to R.drawable.rounded_background_yellow,
+        R.drawable.button_background_green to R.drawable.rounded_background_green,
         R.drawable.button_background_light_blue to R.drawable.rounded_background_light_blue,
         R.drawable.button_background_pink to R.drawable.rounded_background_pink,
         R.drawable.button_background_orange to R.drawable.rounded_background_orange

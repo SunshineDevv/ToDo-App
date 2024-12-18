@@ -1,5 +1,6 @@
 package com.example.todoapp.ui.fragment.auth.singup
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.todoapp.database.model.UserDb
@@ -31,39 +32,59 @@ class SignUpViewModel @Inject constructor(
         MutableStateFlow<AuthenticationState>(AuthenticationState.Empty)
     val registrationState = _registrationState.asStateFlow()
 
-    fun registerNewUser(email: String, password: String, name: String) {
+    fun registerNewUser(email: String, password: String, name: String, confirmPassword: String) {
         auth = Firebase.auth
-        auth.createUserWithEmailAndPassword(email, password)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    val user = auth.currentUser
+        if (name.trim().isNotEmpty() && email.trim().isNotEmpty() && password.trim()
+            .isNotEmpty() && confirmPassword.trim().isNotEmpty()
+            ) {
+            if (password == confirmPassword){
+                Log.d("CheckPass", "$password and $confirmPassword")
+                auth.createUserWithEmailAndPassword(email, password)
+                    .addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            val user = auth.currentUser
 
-                    val profileUpdates = UserProfileChangeRequest.Builder()
-                        .setDisplayName(name)
-                        .build()
+                            val profileUpdates = UserProfileChangeRequest.Builder()
+                                .setDisplayName(name)
+                                .build()
 
-                    user?.updateProfile(profileUpdates)?.addOnCompleteListener { updateTask ->
-                        if (updateTask.isSuccessful) {
-                            val uid = user.uid
-                            viewModelScope.launch {
-                                try {
-                                    repository.upsert(UserDb(userId = uid, userImg = null))
-                                    _registrationState.value = AuthenticationState.Success
-                                } catch (e: Exception) {
+                            user?.updateProfile(profileUpdates)?.addOnCompleteListener { updateTask ->
+                                if (updateTask.isSuccessful) {
+                                    val uid = user.uid
+                                    viewModelScope.launch {
+                                        try {
+                                            repository.upsert(UserDb(userId = uid, userImg = null))
+                                            _registrationState.value = AuthenticationState.Success
+                                        } catch (e: Exception) {
+                                            _registrationState.value =
+                                                AuthenticationState.Error("Database error: ${e.message}")
+                                        }
+                                    }
+                                } else {
                                     _registrationState.value =
-                                        AuthenticationState.Error("Database error: ${e.message}")
+                                        AuthenticationState.Error("Failed to update profile")
                                 }
                             }
                         } else {
                             _registrationState.value =
-                                AuthenticationState.Error("Failed to update profile")
+                                AuthenticationState.Error("Authentication failed: ${task.exception?.message}")
                         }
                     }
-                } else {
-                    _registrationState.value =
-                        AuthenticationState.Error("Authentication failed: ${task.exception?.message}")
-                }
+            } else {
+                _registrationState.value =
+                    AuthenticationState.Error("Passwords do not match")
             }
+        } else if (name.isBlank() && email.isBlank() && password.isBlank() && confirmPassword.isBlank()) {
+            _registrationState.value = AuthenticationState.Error("Credentials cannot be empty")
+        } else if (name.isBlank()) {
+            _registrationState.value = AuthenticationState.Error("Name field cannot be empty")
+        } else if (email.isBlank()) {
+            _registrationState.value = AuthenticationState.Error("Email field cannot be empty")
+        } else if (password.isBlank()) {
+            _registrationState.value = AuthenticationState.Error("Password field cannot be empty")
+        } else if (confirmPassword.isBlank()) {
+            _registrationState.value = AuthenticationState.Error("Confirming field cannot be empty")
+        }
     }
 
     fun clearState() {

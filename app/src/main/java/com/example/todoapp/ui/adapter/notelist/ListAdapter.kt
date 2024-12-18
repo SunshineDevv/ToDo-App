@@ -2,7 +2,6 @@ package com.example.todoapp.ui.adapter.notelist
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -68,8 +67,8 @@ class ListAdapter(
                 "button_background_orange" -> {
                     holder.binding.layoutMain.setBackgroundResource(R.drawable.rounded_background_orange)
                 }
-                "button_background_yellow" -> {
-                    holder.binding.layoutMain.setBackgroundResource(R.drawable.rounded_background_yellow)
+                "button_background_green" -> {
+                    holder.binding.layoutMain.setBackgroundResource(R.drawable.rounded_background_green)
                 }
                 "button_background_pink" -> {
                     holder.binding.layoutMain.setBackgroundResource(R.drawable.rounded_background_pink)
