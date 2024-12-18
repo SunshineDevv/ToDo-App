@@ -7,7 +7,11 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.navigation.NavController
+import androidx.navigation.fragment.NavHostFragment
+import com.example.todoapp.R
 import com.example.todoapp.databinding.ActivityAuthBinding
+import com.google.android.material.tabs.TabLayout
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -15,6 +19,8 @@ import dagger.hilt.android.AndroidEntryPoint
 class AuthActivity : AppCompatActivity() {
 
     private var binding: ActivityAuthBinding? = null
+
+    private lateinit var navController: NavController
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,7 +37,48 @@ class AuthActivity : AppCompatActivity() {
                 insets
             }
         }
+        setupTabLayout()
     }
+
+    private fun setupTabLayout() {
+        val navHostFragment =
+            supportFragmentManager.findFragmentById(R.id.fragmentContainerView) as NavHostFragment
+        navController = navHostFragment.navController
+
+        binding?.tabLayout?.apply {
+            addTab(newTab().setText("Log in"))
+            addTab(newTab().setText("Sign up"))
+        }
+
+        binding?.tabLayout?.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab) {
+                when (tab.position) {
+                    0 -> {
+                        if (navController.currentDestination?.id != R.id.logInFragment) {
+                            navController.navigate(R.id.logInFragment)
+                        }
+                    }
+                    1 -> {
+                        if (navController.currentDestination?.id != R.id.signUpFragment) {
+                            navController.navigate(R.id.signUpFragment)
+                        }
+                    }
+                }
+            }
+
+            override fun onTabUnselected(tab: TabLayout.Tab?) {}
+
+            override fun onTabReselected(tab: TabLayout.Tab?) {}
+        })
+
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            when (destination.id) {
+                R.id.logInFragment -> binding?.tabLayout?.selectTab(binding?.tabLayout?.getTabAt(0))
+                R.id.signUpFragment -> binding?.tabLayout?.selectTab(binding?.tabLayout?.getTabAt(1))
+            }
+        }
+    }
+
 
     override fun onStart() {
         super.onStart()

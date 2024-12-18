@@ -48,6 +48,10 @@ class SignUpFragment : Fragment() {
 
             signUpViewModel.registerNewUser(email, password, userName)
         }
+
+        binding?.logInTextView?.setOnClickListener {
+            findNavController().navigate(R.id.navigate_signUpFragment_to_logInFragment)
+        }
     }
 
     private fun initObservers() {

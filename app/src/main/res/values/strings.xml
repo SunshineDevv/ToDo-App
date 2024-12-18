@@ -11,10 +11,11 @@
     <string name="add_note">Add note</string>
     <string name="logout">Logout</string>
     <string name="password">Password</string>
-    <string name="dont_have_an_account">Dont have an account?</string>
+    <string name="dont_have_an_account">Forgot password?</string>
     <string name="log_in">Log in</string>
-    <string name="email">Email</string>
-    <string name="name">Name</string>
+    <string name="email">Your email</string>
+    <string name="name">Your name</string>
     <string name="confirm_password">Confirm password</string>
     <string name="sign_up">Sign Up</string>
+    <string name="already_have_an_account">Already have an account</string>
 </resources>
