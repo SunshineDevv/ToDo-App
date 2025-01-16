@@ -7,5 +7,6 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "users")
 data class UserDb(
     @PrimaryKey val userId: String,
-    @ColumnInfo(name = "user_img") val userImg: String?
+    @ColumnInfo(name = "user_img") val userImg: String?,
+    @ColumnInfo(name = "security_enabled", defaultValue = "false") val securityEnabled: Boolean = false
 )

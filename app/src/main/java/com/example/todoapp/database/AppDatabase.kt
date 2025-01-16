@@ -11,10 +11,11 @@ import com.example.todoapp.database.model.UserDb
 
 @Database(
     entities = [NoteDb::class, UserDb::class],
-    version = 7,
+    version = 8,
     exportSchema = true,
     autoMigrations = [
-        AutoMigration(from = 6,to = 7)
+        AutoMigration(from = 6,to = 7),
+        AutoMigration(from = 7,to = 8)
     ]
 )
 abstract class AppDatabase : RoomDatabase() {

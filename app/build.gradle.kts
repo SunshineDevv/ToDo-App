@@ -93,6 +93,11 @@ android {
         implementation (libs.gson)
 
         implementation(libs.androidx.core.splashscreen)
+
+        implementation(libs.core)
+        implementation(libs.commons.codec)
+
+        implementation (libs.androidx.security.crypto)
     }
 }
 dependencies {
@@ -101,4 +106,5 @@ dependencies {
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.firebase.auth)
+
 }

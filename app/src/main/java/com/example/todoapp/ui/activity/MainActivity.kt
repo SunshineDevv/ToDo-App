@@ -80,7 +80,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun updateToolbars(destination: NavDestination) {
         when (destination.id) {
-            R.id.noteFragment, R.id.updateNoteFragment -> {
+            R.id.noteFragment, R.id.updateNoteFragment-> {
                 supportActionBar?.apply {
                     title = "MyNotes"
                     setDisplayHomeAsUpEnabled(true)
@@ -93,6 +93,18 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 }
             }
 
+            R.id.securityFragment -> {
+                supportActionBar?.apply {
+                    title = "Security"
+                    setDisplayHomeAsUpEnabled(true)
+                    setHomeButtonEnabled(true)
+                }
+                drawerToggle.isDrawerIndicatorEnabled = false
+
+                binding?.toolbar?.setNavigationOnClickListener {
+                    onBackPressedDispatcher.onBackPressed()
+                }
+            }
             else -> {
                 supportActionBar?.apply {
                     title = "MyNotes"
@@ -119,6 +131,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         val navController = findNavController()
         when (item.itemId) {
             R.id.nav_home -> navController.navigate(R.id.listFragment)
+            R.id.nav_settings -> navController.navigate(R.id.settingsFragment)
         }
         binding?.drawerLayout?.closeDrawer(GravityCompat.START)
         return true
@@ -131,7 +144,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 if (binding?.drawerLayout?.isDrawerOpen(GravityCompat.START) == true) {
                     binding?.drawerLayout?.closeDrawer(GravityCompat.START)
                 } else if (navController.currentDestination?.id == R.id.noteFragment ||
-                    navController.currentDestination?.id == R.id.updateNoteFragment
+                    navController.currentDestination?.id == R.id.updateNoteFragment ||
+                    navController.currentDestination?.id == R.id.securityFragment
                 ) {
                     navController.popBackStack()
                 } else {

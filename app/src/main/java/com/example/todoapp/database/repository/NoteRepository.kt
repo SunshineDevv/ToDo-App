@@ -46,7 +46,6 @@ class NoteRepository @Inject constructor(
                         .document(note.id)
                         .set(noteData)
                         .await()
-                    // Помечаем локальную заметку как синхронизированную
                     noteDao.markNoteAsSynced(note.id)
                 } catch (e: Exception) {
                     Log.e("SyncError", "Failed to sync note: ${note.id}", e)

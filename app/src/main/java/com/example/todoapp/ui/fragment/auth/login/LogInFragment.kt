@@ -59,8 +59,7 @@ class LogInFragment : Fragment() {
             logInViewModel.logInState.flowWithLifecycle(lifecycle).collectLatest { logInState ->
                 when (logInState) {
                     is AuthenticationState.Success -> {
-                        findNavController().navigate(R.id.navigate_logInFragment_to_mainActivity)
-                        requireActivity().finish()
+                        findNavController().navigate(R.id.navigate_logInFragment_to_twoAuthFragment)
                         logInViewModel.clearState()
                     }
 
