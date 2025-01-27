@@ -8,5 +8,5 @@ import androidx.room.PrimaryKey
 data class UserDb(
     @PrimaryKey val userId: String,
     @ColumnInfo(name = "user_img") val userImg: String?,
-    @ColumnInfo(name = "security_enabled", defaultValue = "false") val securityEnabled: Boolean = false
+    @ColumnInfo(name = "security_enabled", defaultValue = "false") var securityEnabled: Boolean = false
 )

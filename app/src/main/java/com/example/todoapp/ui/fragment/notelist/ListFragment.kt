@@ -1,6 +1,7 @@
 package com.example.todoapp.ui.fragment.notelist
 
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.Menu
@@ -23,6 +24,9 @@ import com.example.todoapp.R
 import com.example.todoapp.databinding.FragmentListBinding
 import com.example.todoapp.ui.adapter.notelist.ListAdapter
 import com.example.todoapp.ui.fragment.State
+import com.example.todoapp.ui.fragment.security.SecurePreferencesHelper
+import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -52,24 +56,31 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        if (savedInstanceState == null) {
-            noteListViewModel.onStart()
-        }
-
-        startWork()
-
-        subscribeToObservables()
-
-        binding?.actionButton?.setImageResource(R.drawable.baseline_add_52)
-
-        binding?.actionButton?.setOnClickListener {
-            if (noteListViewModel.isSelectionMode.value) {
-                deleteSelectedNotes()
-                listAdapter.exitSelectionMode()
-                noteListViewModel.disableSelectionMode()
-            } else {
-                findNavController().navigate(R.id.navigate_listFragment_to_noteFragment)
+        val success = SecurePreferencesHelper.getSuccess(requireContext())
+        Log.i("Success_Check", success)
+        if (success == "true" || success == ""){
+            if (savedInstanceState == null) {
+                noteListViewModel.onStart()
             }
+
+            startWork()
+
+            subscribeToObservables()
+
+            binding?.actionButton?.setImageResource(R.drawable.baseline_add_52)
+
+            binding?.actionButton?.setOnClickListener {
+                if (noteListViewModel.isSelectionMode.value) {
+                    deleteSelectedNotes()
+                    listAdapter.exitSelectionMode()
+                    noteListViewModel.disableSelectionMode()
+                } else {
+                    findNavController().navigate(R.id.navigate_listFragment_to_noteFragment)
+                }
+            }
+        } else {
+            FirebaseAuth.getInstance().signOut()
+            findNavController().navigate(R.id.navigate_listFragment_to_authActivity)
         }
     }
 

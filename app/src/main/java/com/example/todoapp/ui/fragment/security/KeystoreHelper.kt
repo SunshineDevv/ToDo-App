@@ -14,7 +14,6 @@ object KeystoreHelper {
     private const val ANDROID_KEYSTORE = "AndroidKeyStore"
     private const val TRANSFORMATION = "AES/GCM/NoPadding"
 
-    // Генерація секретного ключа в Keystore
     fun generateSecretKey() {
         val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
         if (!keyStore.containsAlias(KEY_ALIAS)) {
@@ -30,22 +29,19 @@ object KeystoreHelper {
         }
     }
 
-    // Отримання секретного ключа з Keystore
     private fun getSecretKey(): SecretKey {
         val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
         return keyStore.getKey(KEY_ALIAS, null) as SecretKey
     }
 
-    // Шифрування даних
     fun encryptData(plainText: String): ByteArray {
         val cipher = Cipher.getInstance(TRANSFORMATION)
         cipher.init(Cipher.ENCRYPT_MODE, getSecretKey())
         val iv = cipher.iv
         val encryptedBytes = cipher.doFinal(plainText.toByteArray(Charsets.UTF_8))
-        return iv + encryptedBytes  // IV + зашифровані дані
+        return iv + encryptedBytes
     }
 
-    // Дешифрування даних
     fun decryptData(encryptedData: ByteArray): String {
         val iv = encryptedData.copyOfRange(0, 12)
         val encryptedBytes = encryptedData.copyOfRange(12, encryptedData.size)

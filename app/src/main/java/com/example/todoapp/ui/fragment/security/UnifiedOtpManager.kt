@@ -1,95 +1,148 @@
 package com.example.todoapp.ui.fragment.security
 
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
 import com.google.zxing.BarcodeFormat
-import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
-import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import org.apache.commons.codec.binary.Base32
 import java.nio.ByteBuffer
 import java.security.SecureRandom
 import java.util.concurrent.TimeUnit
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
+import javax.inject.Inject
 import kotlin.experimental.and
-import kotlin.math.floor
 import kotlin.math.pow
 
-class UnifiedOtpManager(
-    val secretKey: ByteArray,
-    private val codeDigits: Int = 6,
-    private val algorithm: String = "HmacSHA256",
-    private val timeStep: Long = 30,
-    private val timeUnit: TimeUnit = TimeUnit.SECONDS
+class UnifiedOtpManager @Inject constructor(
+    @ApplicationContext private val context: Context,
 ) {
+    private val codeDigits = 6
+    private val algorithm = "HmacSHA256"
+    private val timeStep = 30L
+    private val timeUnit = TimeUnit.SECONDS
 
-    companion object {
-        private const val SECRET_SIZE_BYTES = 10
+    private val sizeOfSecretInBytes = 16
 
-        fun generateReadableSecret(length: Int = SECRET_SIZE_BYTES): String {
-            val allowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
-            val random = SecureRandom()
-            return (1..length)
-                .map { allowedChars[random.nextInt(allowedChars.length)] }
-                .joinToString("")
-        }
+    private val secretFlow = MutableStateFlow<ByteArray?>(null)
+
+    fun updateSecret(newSecret: String) {
+        val encodedSecret = Base32().decode(newSecret.uppercase().replace("=", ""))
+        secretFlow.value = encodedSecret
     }
 
-    fun generateToken(): String {
-        val counter = currentCounter()
-        val hash = calculateHmac(secretKey, counter)
-        val offset = (hash.last() and 0x0F).toInt()
-        val binaryCode = ByteBuffer.wrap(hash.copyOfRange(offset, offset + 4)).int and 0x7FFFFFFF
-        val otp = binaryCode % 10.0.pow(codeDigits).toInt()
-        return otp.toString().padStart(codeDigits, '0')
+    fun generateReadableSecret(length: Int = sizeOfSecretInBytes): String {
+        val allowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
+        val random = SecureRandom()
+        val secret = (1..length)
+            .map { allowedChars[random.nextInt(allowedChars.length)] }
+            .joinToString("")
+        return secret
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun tokenFlow(): Flow<String?> {
+        return secretFlow.flatMapLatest { secret ->
+            flow {
+                if (secret != null) {
+                    if (secret.isEmpty()) {
+                        emit("000000")
+                        return@flow
+                    }
+                }
+                while (true) {
+                    val currentTime = System.currentTimeMillis()
+                    val currentCounter = currentTime / timeUnit.toMillis(timeStep)
+
+                    val currentToken = secret?.let { generateTokenForCounter(it, currentCounter) }
+                    emit(currentToken)
+
+                    val nextExecutionTime =
+                        ((currentTime / timeUnit.toMillis(timeStep)) + 1) * timeUnit.toMillis(
+                            timeStep
+                        )
+                    delay(nextExecutionTime - currentTime)
+                }
+            }
+        }.flowOn(Dispatchers.Default)
+    }
+
+    fun takeSecret(): ByteArray {
+        val secret = SecurePreferencesHelper.getSecret(context) ?: return ByteArray(0)
+        val decryptedSecret = KeystoreHelper.decryptData(secret) ?: return ByteArray(0)
+
+        return try {
+            val decodedSecret = Base32().decode(decryptedSecret)
+            secretFlow.value = decodedSecret
+            decodedSecret
+        } catch (e: Exception) {
+            ByteArray(0)  // Возвращаем пустой массив при ошибке декодирования
+        }
     }
 
     fun validateToken(inputCode: String): Boolean {
-        val currentCounter = currentCounter()
-        return (-1..1).any { offset ->
-            val counter = currentCounter + offset
-            inputCode == generateTokenForCounter(counter)
+        val secretKey = takeSecret() ?: return false
+        return (-1..1).any {
+            inputCode == generateTokenForCounter(
+                secretKey,
+                currentCounter() + it
+            )
         }
     }
 
-    private fun generateTokenForCounter(counter: Long): String {
+    private fun generateTokenForCounter(secretKey: ByteArray, counter: Long): String {
         val hash = calculateHmac(secretKey, counter)
         val offset = (hash.last() and 0x0F).toInt()
-        val binaryCode = ByteBuffer.wrap(hash.copyOfRange(offset, offset + 4)).int and 0x7FFFFFFF
-        val otp = binaryCode % 10.0.pow(codeDigits).toInt()
+        val otp =
+            (ByteBuffer.wrap(hash.copyOfRange(offset, offset + 4)).int and 0x7FFFFFFF) % 10.0.pow(
+                codeDigits
+            ).toInt()
+
         return otp.toString().padStart(codeDigits, '0')
     }
 
     fun buildOtpUri(account: String, issuer: String): String {
-        val encodedSecret = Base32().encodeToString(secretKey)
+        val secretKey = takeSecret()
+        if (secretKey.isEmpty()) return ""
+        val encodedSecret = Base32().encodeToString(secretKey).replace("=", "")
         return "otpauth://totp/$issuer:$account?secret=$encodedSecret&issuer=$issuer&algorithm=SHA256&digits=$codeDigits&period=$timeStep"
     }
 
-    fun generateQrCode(content: String): Bitmap {
-        val size = 180
-        val qrCodeWriter = QRCodeWriter()
-        val hints = mapOf(EncodeHintType.ERROR_CORRECTION to ErrorCorrectionLevel.L)
-
-        val bitMatrix = qrCodeWriter.encode(content, BarcodeFormat.QR_CODE, size, size, hints)
-        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.RGB_565)
-
-        for (x in 0 until size) {
-            for (y in 0 until size) {
-                bitmap.setPixel(x, y, if (bitMatrix[x, y]) Color.BLACK else Color.WHITE)
+    fun generateQrCode(content: String): Bitmap? {
+        if (content.isEmpty()) return null
+        return try {
+            val size = 180
+            val qrCodeWriter = QRCodeWriter()
+            val bitMatrix = qrCodeWriter.encode(content, BarcodeFormat.QR_CODE, size, size)
+            Bitmap.createBitmap(size, size, Bitmap.Config.RGB_565).apply {
+                for (x in 0 until size) {
+                    for (y in 0 until size) {
+                        setPixel(x, y, if (bitMatrix[x, y]) Color.BLACK else Color.WHITE)
+                    }
+                }
             }
+        } catch (e: Exception) {
+            null
         }
-        return bitmap
     }
 
     private fun calculateHmac(key: ByteArray, counter: Long): ByteArray {
         val mac = Mac.getInstance(algorithm)
-        mac.init(SecretKeySpec(key, "RAW"))
-        val message = ByteBuffer.allocate(8).putLong(counter).array()
-        return mac.doFinal(message)
+        mac.init(SecretKeySpec(key, algorithm))
+        return mac.doFinal(ByteBuffer.allocate(8).putLong(counter).array())
     }
 
     private fun currentCounter(): Long {
-        return floor(System.currentTimeMillis().toDouble() / timeUnit.toMillis(timeStep)).toLong()
+        return System.currentTimeMillis() / timeUnit.toMillis(timeStep)
     }
 }

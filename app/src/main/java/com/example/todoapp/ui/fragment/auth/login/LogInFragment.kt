@@ -1,10 +1,10 @@
 package com.example.todoapp.ui.fragment.auth.login
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -14,6 +14,7 @@ import androidx.navigation.fragment.findNavController
 import com.example.todoapp.R
 import com.example.todoapp.databinding.FragmentLogInBinding
 import com.example.todoapp.ui.fragment.auth.AuthenticationState
+import com.example.todoapp.ui.fragment.security.SecurePreferencesHelper
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -58,7 +59,19 @@ class LogInFragment : Fragment() {
         lifecycleScope.launch {
             logInViewModel.logInState.flowWithLifecycle(lifecycle).collectLatest { logInState ->
                 when (logInState) {
-                    is AuthenticationState.Success -> {
+                    is AuthenticationState.SuccessNewUser -> {
+                        findNavController().navigate(R.id.navigate_logInFragment_to_mainActivity)
+                        requireActivity().finish()
+                        logInViewModel.clearState()
+                    }
+
+                    is AuthenticationState.SuccessNoSecureEnable -> {
+                        findNavController().navigate(R.id.navigate_logInFragment_to_mainActivity)
+                        requireActivity().finish()
+                        logInViewModel.clearState()
+                    }
+
+                    is AuthenticationState.SuccessWithSecureEnable -> {
                         findNavController().navigate(R.id.navigate_logInFragment_to_twoAuthFragment)
                         logInViewModel.clearState()
                     }

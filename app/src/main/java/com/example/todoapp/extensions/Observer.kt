@@ -22,7 +22,7 @@ fun <T : Any> ViewModel.observeLiveData(liveData: LiveData<T>, result: (T) -> Un
     }
 }
 
-fun <T : Any> Fragment.observe(flow: Flow<T?>, body: suspend (T?) -> Unit) {
+fun <T : Any> Fragment.observeFlow(flow: Flow<T?>, body: suspend (T?) -> Unit) {
     viewLifecycleOwner.lifecycleScope.launch {
         viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
             flow.collect { value ->
@@ -41,3 +41,5 @@ fun <T : Any> AppCompatActivity.observe(flow: Flow<T?>, body: suspend (T?) -> Un
         }
     }
 }
+
+

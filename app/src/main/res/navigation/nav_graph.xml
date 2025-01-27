@@ -5,11 +5,18 @@
     android:id="@+id/nav_graph"
     app:startDestination="@id/listFragment">
 
+    <activity
+        android:id="@+id/authActivity"
+        android:name="com.example.todoapp.ui.activity.AuthActivity"
+        android:label="AuthActivity" />
+
     <fragment
         android:id="@+id/listFragment"
         android:name="com.example.todoapp.ui.fragment.notelist.ListFragment"
         android:label="fragment_list"
         tools:layout="@layout/fragment_list" >
+
+
         <action
             android:id="@+id/navigate_listFragment_to_noteFragment"
             app:destination="@id/noteFragment" />
@@ -19,6 +26,9 @@
         <action
             android:id="@+id/navigate_listFragment_to_settingsFragment"
             app:destination="@id/settingsFragment" />
+        <action
+            android:id="@+id/navigate_listFragment_to_authActivity"
+            app:destination="@id/authActivity" />
     </fragment>
     <fragment
         android:id="@+id/noteFragment"

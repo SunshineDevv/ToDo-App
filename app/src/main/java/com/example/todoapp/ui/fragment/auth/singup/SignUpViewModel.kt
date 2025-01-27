@@ -1,16 +1,19 @@
 package com.example.todoapp.ui.fragment.auth.singup
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.todoapp.database.model.UserDb
 import com.example.todoapp.database.repository.UserRepository
 import com.example.todoapp.ui.fragment.auth.AuthenticationState
+import com.example.todoapp.ui.fragment.security.SecurePreferencesHelper
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.auth.auth
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -18,6 +21,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SignUpViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val repository: UserRepository
 ) : ViewModel() {
 
@@ -53,7 +57,8 @@ class SignUpViewModel @Inject constructor(
                                     val uid = user.uid
                                     viewModelScope.launch {
                                         try {
-                                            repository.upsert(UserDb(userId = uid, userImg = null))
+                                            SecurePreferencesHelper.saveSuccess(context, "")
+                                            repository.upsert(UserDb(userId = uid, userImg = null, securityEnabled = false))
                                             _registrationState.value = AuthenticationState.Success
                                         } catch (e: Exception) {
                                             _registrationState.value =

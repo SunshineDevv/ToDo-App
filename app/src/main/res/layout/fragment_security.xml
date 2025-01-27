@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -7,121 +8,130 @@
     android:background="@android:color/black"
     tools:context=".ui.fragment.security.SecurityFragment">
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="8dp"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_height="match_parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintEnd_toEndOf="parent">
 
-        <TextView
-            android:id="@+id/appTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:paddingBottom="16dp"
-            android:text="Security configuration"
-            android:textColor="@android:color/white"
-            android:textSize="24sp"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:paddingBottom="8dp"
-            android:text="The minimum requirement for a secret is 10 characters for correct operation."
-            android:textColor="@android:color/darker_gray"
-            android:textSize="14sp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingTop="8dp"
-            android:text="Your own secret:"
-            android:textColor="@android:color/white"
-            android:textSize="14sp" />
-
-        <EditText
-            android:id="@+id/secretEditText"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:background="@drawable/rounded_edittext_background"
-            android:hint="Secret1234"
-            android:inputType="text"
-            android:padding="10dp"
-            android:textColor="@android:color/white"
-            android:textColorHint="@color/light_grey"
-            android:textSize="16sp" />
+            android:orientation="vertical"
+            android:padding="8dp">
 
-        <Button
-            android:id="@+id/setCustomSecretButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:background="@drawable/rounded_auth_button_background"
-            android:padding="10dp"
-            android:text="Set your own secret"
-            android:textColor="@android:color/black" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:layout_marginTop="8dp"
+                android:paddingBottom="8dp"
+                android:text="The minimum requirement for a secret is 16 characters for correct operation."
+                android:textColor="@android:color/darker_gray"
+                android:textSize="14sp" />
 
-        <Button
-            android:id="@+id/generateSecretButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:background="@drawable/rounded_auth_button_background"
-            android:padding="10dp"
-            android:text="Generate a random secret"
-            android:textColor="@android:color/black" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="8dp"
+                android:text="Your own secret:"
+                android:textColor="@android:color/white"
+                android:textSize="14sp" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:paddingTop="20dp"
-            android:text="Base32-encoded secret:"
-            android:textColor="@android:color/white"
-            android:textSize="14sp" />
+            <EditText
+                android:id="@+id/secretEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/rounded_edittext_background"
+                android:hint="Secret1234"
+                android:inputType="text"
+                android:padding="10dp"
+                android:textColor="@android:color/white"
+                android:textColorHint="@color/light_grey"
+                android:textSize="16sp" />
 
-        <EditText
-            android:id="@+id/base32SecretEditText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:background="@drawable/rounded_edittext_background"
-            android:inputType="none"
-            android:longClickable="true"
-            android:padding="10dp"
-            android:textColor="@android:color/white"
-            android:textIsSelectable="true"
-            android:textSize="16sp" />
+            <Button
+                android:id="@+id/setCustomSecretButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:background="@drawable/rounded_auth_button_background"
+                android:padding="10dp"
+                android:text="Set your own secret"
+                android:textColor="@android:color/black" />
 
-        <ImageView
-            android:id="@+id/qrCodeImageView"
-            android:layout_width="200dp"
-            android:layout_height="200dp"
-            android:layout_gravity="center"
-            android:layout_marginTop="16dp"
-            android:contentDescription="QR Code" />
+            <Button
+                android:id="@+id/generateSecretButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:background="@drawable/rounded_auth_button_background"
+                android:padding="10dp"
+                android:text="Generate a random secret"
+                android:textColor="@android:color/black" />
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginTop="16dp"
-            android:background="@android:color/darker_gray" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="20dp"
+                android:text="Base32-encoded secret:"
+                android:textColor="@android:color/white"
+                android:textSize="14sp" />
 
-        <EditText
-            android:id="@+id/codeEditText"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/rounded_edittext_background"
-            android:padding="10dp"
-            android:focusable="false"
-            android:clickable="false"
-            android:textColor="@android:color/white"
-            android:textSize="16sp"
-            android:layout_marginTop="8dp" />
-    </LinearLayout>
+            <EditText
+                android:id="@+id/base32SecretEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/rounded_edittext_background"
+                android:inputType="none"
+                android:longClickable="true"
+                android:padding="10dp"
+                android:textColor="@android:color/white"
+                android:textIsSelectable="true"
+                android:textSize="16sp" />
+
+            <ImageView
+                android:id="@+id/qrCodeImageView"
+                android:layout_width="200dp"
+                android:layout_height="200dp"
+                android:layout_gravity="center"
+                android:layout_marginTop="16dp"
+                android:contentDescription="QR Code" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="16dp"
+                android:background="@android:color/darker_gray" />
+
+            <EditText
+                android:id="@+id/codeEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/rounded_edittext_background"
+                android:padding="10dp"
+                android:focusable="false"
+                android:clickable="false"
+                android:textColor="@android:color/white"
+                android:textSize="16sp"
+                android:layout_marginTop="8dp" />
+
+            <Button
+                android:id="@+id/disableTwoFactorButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:background="@drawable/rounded_auth_button_background"
+                android:padding="10dp"
+                android:text="Disable 2FA"
+                android:textColor="@android:color/black" />
+
+        </LinearLayout>
+
+    </ScrollView>
+
 </androidx.constraintlayout.widget.ConstraintLayout>
