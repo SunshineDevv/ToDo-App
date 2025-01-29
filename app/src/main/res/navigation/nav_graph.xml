@@ -16,7 +16,6 @@
         android:label="fragment_list"
         tools:layout="@layout/fragment_list" >
 
-
         <action
             android:id="@+id/navigate_listFragment_to_noteFragment"
             app:destination="@id/noteFragment" />

@@ -2,7 +2,6 @@ package com.example.todoapp.ui.fragment.security
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import org.apache.commons.codec.binary.Base32
 
@@ -17,11 +16,8 @@ object SecurePreferencesHelper {
     }
 
     fun saveSuccess(context: Context, success: String) {
-        Log.i("SuccessCheck", success.toString())
-
         val successBytes = success.toByteArray(Charsets.UTF_8)
         val encryptedSuccess = Base32().encodeToString(successBytes).replace("=", "")
-        Log.i("SuccessCheck", encryptedSuccess)
         getPrefs(context).edit()
             .putString("encrypted_success_${FirebaseAuth.getInstance().currentUser?.uid}", encryptedSuccess)
             .apply()
@@ -34,7 +30,6 @@ object SecurePreferencesHelper {
 
         val decodedBytes = Base32().decode(encryptedSuccess)
         val decodedString = String(decodedBytes, Charsets.UTF_8)
-        Log.i("SuccessCheck", decodedString)
 
         return decodedString
     }
@@ -48,6 +43,17 @@ object SecurePreferencesHelper {
         val encryptedSecretHex = getPrefs(context).getString("encrypted_secret_${auth.currentUser?.uid}", null)
         return encryptedSecretHex?.decodeHex()
     }
+
+    fun clearSecret(context: Context) {
+        val prefs = getPrefs(context)
+        val editor = prefs.edit()
+        val userId = auth.currentUser?.uid
+        if (userId != null) {
+            editor.remove("encrypted_secret_$userId")
+            editor.apply()
+        }
+    }
+
 
     private fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
 

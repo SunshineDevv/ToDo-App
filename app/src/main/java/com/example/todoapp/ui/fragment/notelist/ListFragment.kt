@@ -55,10 +55,6 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        val success = SecurePreferencesHelper.getSuccess(requireContext())
-        Log.i("Success_Check", success)
-        if (success == "true" || success == ""){
             if (savedInstanceState == null) {
                 noteListViewModel.onStart()
             }
@@ -78,10 +74,6 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
                     findNavController().navigate(R.id.navigate_listFragment_to_noteFragment)
                 }
             }
-        } else {
-            FirebaseAuth.getInstance().signOut()
-            findNavController().navigate(R.id.navigate_listFragment_to_authActivity)
-        }
     }
 
     private fun startWork() {

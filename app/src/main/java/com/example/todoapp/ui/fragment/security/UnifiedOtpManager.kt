@@ -3,6 +3,7 @@ package com.example.todoapp.ui.fragment.security
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.util.Log
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -91,12 +92,36 @@ class UnifiedOtpManager @Inject constructor(
     }
 
     fun validateToken(inputCode: String): Boolean {
-        val secretKey = takeSecret() ?: return false
-        return (-1..1).any {
-            inputCode == generateTokenForCounter(
-                secretKey,
-                currentCounter() + it
+        val secretKey = takeSecret()
+
+        if (secretKey == null || secretKey.isEmpty()) {
+            Log.w("OTP_Validation", "⚠️ Warning: Secret key is missing or empty.")
+            return false
+        }
+
+        val currentCounter = currentCounter()
+
+        Log.i("OTP_Validation", "🔍 Incoming code: $inputCode")
+        Log.i("OTP_Validation", "🕒 Current counter: $currentCounter")
+
+        return (-1..1).any { offset ->
+            val generatedToken = generateTokenForCounter(secretKey, currentCounter + offset)
+
+            Log.d(
+                "OTP_Validation",
+                "🔄 Checking generated token: $generatedToken (offset = $offset, counter = ${currentCounter + offset})"
             )
+
+            val isMatch = inputCode == generatedToken
+            if (isMatch) {
+                Log.i("OTP_Validation", "✅ Token matched! Authentication successful.")
+            }
+
+            isMatch
+        }.also { result ->
+            if (!result) {
+                Log.e("OTP_Validation", "❌ Error: The entered code does not match any valid OTPs.")
+            }
         }
     }
 

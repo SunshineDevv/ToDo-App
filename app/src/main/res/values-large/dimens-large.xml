@@ -2,4 +2,5 @@
 <resources>
     <dimen name="logo_text_margin_bottom">64dp</dimen>
     <dimen name="logo_text_size">64dp</dimen>
+    <dimen name="linear_layout_log_in">576dp</dimen>
 </resources>

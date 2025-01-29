@@ -111,20 +111,21 @@ class SecurityViewModel @Inject constructor(
     }
 
     fun setCustomSecret(userSecret: String) {
-        viewModelScope.launch {
-            userId?.let { repository.markUserAsSecure(it) }
+        if (userSecret.length < 16 ||  userSecret.length > 16) {
+            _securityState.value =
+                SecurityState.Error("❗️The secret must contain 16 characters.")
+            return
+        } else if (!userSecret.matches(Regex("^[A-Z2-7]+$"))) {
+            _securityState.value =
+                SecurityState.Error("❗️The secret must contain only the letters A-Z and the numbers 2-7")
+            return
+        } else {
+            viewModelScope.launch {
+                userId?.let {
+                    repository.markUserAsSecure(it)
+                }
+            }
             _isSecure.value = 1
-            if (userSecret.length < 16 ||  userSecret.length > 16) {
-                _securityState.value =
-                    SecurityState.Error("❗️The secret must contain 16 characters.")
-                return@launch
-            }
-            if (!userSecret.matches(Regex("^[A-Z2-7]+$"))) {
-                _securityState.value =
-                    SecurityState.Error("❗️The secret must contain only the letters A-Z and the numbers 2-7")
-                return@launch
-            }
-
             _secretKey.value = userSecret
             otpManager.updateSecret(userSecret)
 
@@ -157,6 +158,7 @@ class SecurityViewModel @Inject constructor(
     }
 
     fun setSecureDisable() {
+        SecurePreferencesHelper.clearSecret(context)
         _isSecure.value = 0
         viewModelScope.launch {
             if (userId != null) {

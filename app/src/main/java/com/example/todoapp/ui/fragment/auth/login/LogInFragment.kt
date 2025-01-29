@@ -49,8 +49,8 @@ class LogInFragment : Fragment() {
             logInViewModel.logInUser(email, password)
         }
 
-        binding?.signUpTextView?.setOnClickListener {
-            findNavController().navigate(R.id.navigate_logInFragment_to_signUpFragment)
+        binding?.forgetPassTextView?.setOnClickListener {
+            findNavController().navigate(R.id.navigate_logInFragment_to_forgetPassFragment)
         }
 
     }

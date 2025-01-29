@@ -7,7 +7,7 @@
     <fragment
         android:id="@+id/signUpFragment"
         android:name="com.example.todoapp.ui.fragment.auth.singup.SignUpFragment"
-        android:label="fragment_sign_up"
+        android:label=""
         tools:layout="@layout/fragment_sign_up" >
         <action
             android:id="@+id/navigate_signUpFragment_to_mainActivity"
@@ -19,7 +19,7 @@
     <fragment
         android:id="@+id/logInFragment"
         android:name="com.example.todoapp.ui.fragment.auth.login.LogInFragment"
-        android:label="fragment_log_in"
+        android:label=""
         tools:layout="@layout/fragment_log_in" >
         <action
             android:id="@+id/navigate_logInFragment_to_signUpFragment"
@@ -30,6 +30,9 @@
         <action
             android:id="@+id/navigate_logInFragment_to_mainActivity"
             app:destination="@id/mainActivity" />
+        <action
+            android:id="@+id/navigate_logInFragment_to_forgetPassFragment"
+            app:destination="@id/forgetPassFragment" />
     </fragment>
     <activity
         android:id="@+id/mainActivity"
@@ -38,13 +41,22 @@
     <fragment
         android:id="@+id/twoAuthFragment"
         android:name="com.example.todoapp.ui.fragment.auth.login.TwoAuthFragment"
-        android:label="fragment_two_auth"
+        android:label=""
         tools:layout="@layout/fragment_two_auth" >
         <action
             android:id="@+id/navigate_twoAuthFragment_to_mainActivity"
             app:destination="@id/mainActivity" />
         <action
             android:id="@+id/navigate_twoAuthFragment_to_logInFragment"
+            app:destination="@id/logInFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/forgetPassFragment"
+        android:name="com.example.todoapp.ui.fragment.auth.recoverpass.ForgetPassFragment"
+        android:label=""
+        tools:layout="@layout/fragment_forget_pass" >
+        <action
+            android:id="@+id/navigate_forgetPassFragment_to_logInFragment"
             app:destination="@id/logInFragment" />
     </fragment>
 </navigation>
