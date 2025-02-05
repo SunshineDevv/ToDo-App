@@ -37,6 +37,7 @@ class SignUpViewModel @Inject constructor(
     val registrationState = _registrationState.asStateFlow()
 
     fun registerNewUser(email: String, password: String, name: String, confirmPassword: String) {
+        _registrationState.value = AuthenticationState.Loading
         auth = Firebase.auth
         if (name.trim().isNotEmpty() && email.trim().isNotEmpty() && password.trim()
             .isNotEmpty() && confirmPassword.trim().isNotEmpty()

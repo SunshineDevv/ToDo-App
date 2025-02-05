@@ -14,6 +14,7 @@ import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.auth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -34,6 +35,7 @@ class LoginViewModel @Inject constructor(
     val logInState = _logInState.asStateFlow()
 
     fun logInUser(email: String, password: String) {
+        _logInState.value = AuthenticationState.Loading
         auth = Firebase.auth
         if (email.trim().isNotEmpty() && password.trim().isNotEmpty()) {
             auth.signInWithEmailAndPassword(email, password)

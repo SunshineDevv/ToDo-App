@@ -60,21 +60,18 @@ class ForgetPassFragment : Fragment() {
                 when (state) {
 
                     is AuthenticationState.SuccessReset -> {
-                        Toast.makeText(requireContext(), state.successMsg, Toast.LENGTH_LONG)
-                            .apply {
-                                setGravity(Gravity.CENTER, 0, 0)
+                        Toast.makeText(requireContext(), state.successMsg, Toast.LENGTH_LONG).apply {
                                 show()
                             }
                         findNavController().navigate(R.id.navigate_forgetPassFragment_to_logInFragment)
                         forgetPassViewModel.clearState()
                     }
 
-                    is AuthenticationState.Error -> {
+                    is AuthenticationState.ErrorReset -> {
                         Toast.makeText(requireContext(), state.errorMsg, Toast.LENGTH_LONG).apply {
-                            setGravity(Gravity.CENTER, 0, 0)
                             show()
-                            forgetPassViewModel.clearState()
                         }
+                        forgetPassViewModel.clearState()
                     }
 
                     else -> {}

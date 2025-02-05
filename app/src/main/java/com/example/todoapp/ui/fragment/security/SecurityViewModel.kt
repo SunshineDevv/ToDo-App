@@ -12,6 +12,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.apache.commons.codec.binary.Base32
 import javax.inject.Inject
@@ -37,16 +38,18 @@ class SecurityViewModel @Inject constructor(
     private val _token = MutableStateFlow("")
     val token = _token.asStateFlow()
 
-
+    private val _currentAlgorithm = MutableStateFlow(ShaAlgorithm.SHA256.algorithm)
+    val currentAlgorithm = _currentAlgorithm.asStateFlow()
 
     fun onStart() {
         viewModelScope.launch {
             initValues()
             initValuesToSet()
         }
+        _currentAlgorithm.value = SecurePreferencesHelper.getEnum(context)
     }
 
-    private suspend fun initValues(){
+    private suspend fun initValues() {
         if (userId != null) {
             val secure = repository.isUserSecure(userId)
             _isSecure.value = secure
@@ -55,7 +58,7 @@ class SecurityViewModel @Inject constructor(
         }
     }
 
-    private suspend fun initValuesToSet(){
+    private suspend fun initValuesToSet() {
         _isSecure.collectLatest { secure ->
             if (secure == 1) {
                 collectToken()
@@ -72,7 +75,11 @@ class SecurityViewModel @Inject constructor(
         }
     }
 
-    private fun collectToken(){
+    fun setAlgorithm(algorithm: ShaAlgorithm) {
+        _currentAlgorithm.value = algorithm.algorithm
+    }
+
+    private fun collectToken() {
         viewModelScope.launch {
             otpManager.tokenFlow().collect {
                 if (it != null) {
@@ -82,54 +89,77 @@ class SecurityViewModel @Inject constructor(
         }
     }
 
-    fun generateNewSecret() {
-        viewModelScope.launch {
+    fun getSecureStatus(): Int {
+        return isSecure.value
+    }
 
+    fun generateNewSecret() {
+        _securityState.value = SecurityState.Loading
+        ShaAlgorithm.entries.find { it.algorithm == currentAlgorithm.value }
+            ?.let {
+                SecurePreferencesHelper.saveEnum(context, it)
+                otpManager.updateAlgorithm(it)
+            }
+        viewModelScope.launch {
             if (userId != null) {
                 repository.markUserAsSecure(userId)
             }
-
-            _isSecure.value = 1
-
-            val readableSecret = otpManager.generateReadableSecret()
-            _secretKey.value = readableSecret
-            otpManager.updateSecret(readableSecret)
-
-            val base32Secret =
-                Base32().encodeToString(readableSecret.toByteArray()).uppercase()
-                    .replace("=", "")
-            val encryptedSecret = KeystoreHelper.encryptData(base32Secret).toHex()
-            SecurePreferencesHelper.saveSecret(context, encryptedSecret.hexToByteArray())
-
-            val otpUri = otpManager.buildOtpUri(
-                FirebaseAuth.getInstance().currentUser?.email.toString(),
-                "MyNotes"
-            )
-
-            _securityState.value = SecurityState.LoadingData(secretKey.value, base32Secret, otpUri)
         }
+        _isSecure.value = 1
+
+        val readableSecret = otpManager.generateReadableSecret()
+        _secretKey.value = readableSecret
+        otpManager.updateSecret(readableSecret)
+
+        val base32Secret =
+            Base32().encodeToString(readableSecret.toByteArray()).uppercase()
+                .replace("=", "")
+        val encryptedSecret = KeystoreHelper.encryptData(base32Secret).toHex()
+        SecurePreferencesHelper.saveSecret(context, encryptedSecret.hexToByteArray())
+
+        val otpUri = otpManager.buildOtpUri(
+            FirebaseAuth.getInstance().currentUser?.email.toString(),
+            "MyNotes"
+        )
+        _securityState.value = SecurityState.LoadingData(secretKey.value, base32Secret, otpUri)
     }
 
     fun setCustomSecret(userSecret: String) {
-        if (userSecret.length < 16 ||  userSecret.length > 16) {
+        val requiredLength = when (currentAlgorithm.value) {
+            ShaAlgorithm.SHA1.algorithm -> ShaAlgorithm.SHA1.sizeOfSecret
+            ShaAlgorithm.SHA256.algorithm -> ShaAlgorithm.SHA256.sizeOfSecret
+            ShaAlgorithm.SHA512.algorithm -> ShaAlgorithm.SHA512.sizeOfSecret
+            else -> ShaAlgorithm.SHA256.sizeOfSecret
+        }
+
+        if (userSecret.length != requiredLength) {
             _securityState.value =
-                SecurityState.Error("❗️The secret must contain 16 characters.")
+                SecurityState.Error("❗️The secret must contain exactly $requiredLength characters.")
             return
         } else if (!userSecret.matches(Regex("^[A-Z2-7]+$"))) {
             _securityState.value =
-                SecurityState.Error("❗️The secret must contain only the letters A-Z and the numbers 2-7")
+                SecurityState.Error("❗️The secret must contain only the letters A-Z and the numbers 2-7.")
             return
         } else {
+            _securityState.value = SecurityState.Loading
+            ShaAlgorithm.entries.find { it.algorithm == currentAlgorithm.value }
+                ?.let {
+                    SecurePreferencesHelper.saveEnum(context, it)
+                    otpManager.updateAlgorithm(it)
+                }
+
             viewModelScope.launch {
                 userId?.let {
                     repository.markUserAsSecure(it)
                 }
             }
+
             _isSecure.value = 1
             _secretKey.value = userSecret
             otpManager.updateSecret(userSecret)
 
-            val base32Secret = Base32().encodeToString(userSecret.toByteArray()).uppercase().replace("=", "")
+            val base32Secret =
+                Base32().encodeToString(userSecret.toByteArray()).uppercase().replace("=", "")
             val encryptedSecret = KeystoreHelper.encryptData(base32Secret).toHex()
             SecurePreferencesHelper.saveSecret(context, encryptedSecret.hexToByteArray())
 
@@ -158,8 +188,12 @@ class SecurityViewModel @Inject constructor(
     }
 
     fun setSecureDisable() {
+        SecurePreferencesHelper.clearEnum(context)
+        _currentAlgorithm.value = ""
         SecurePreferencesHelper.clearSecret(context)
         _isSecure.value = 0
+        otpManager.clearAlgorithm()
+        otpManager.updateSecret("")
         viewModelScope.launch {
             if (userId != null) {
                 repository.markUserAsNotSecure(userId)

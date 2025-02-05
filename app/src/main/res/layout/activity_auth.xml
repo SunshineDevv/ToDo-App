@@ -82,4 +82,31 @@
         app:layout_constraintTop_toBottomOf="@id/tabLayout"
         app:navGraph="@navigation/nav_graph_auth" />
 
+    <View
+        android:id="@+id/dimOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@android:color/black"
+        android:visibility="gone"
+        android:alpha="0.6"
+        android:clickable="true"
+        android:focusable="true"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:background="@android:color/transparent">
+
+        <ProgressBar
+            android:id="@+id/progressIndicator"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:visibility="gone"
+            android:indeterminate="true"
+            android:indeterminateTint="@color/yellow"/>
+    </LinearLayout>
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>

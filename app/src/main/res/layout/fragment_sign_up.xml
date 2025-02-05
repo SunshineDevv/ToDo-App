@@ -60,6 +60,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:background="@drawable/rounded_edittext_background"
+                        android:inputType="text"
                         android:ems="10"
                         android:hint="@string/name"
                         android:padding="12dp"

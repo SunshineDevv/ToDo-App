@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/chose_algorithm_type"
+        android:icon="@drawable/baseline_more_vert_24"
+        android:title=""
+        app:showAsAction="always">
+
+        <menu>
+            <item
+                android:id="@+id/menu_header"
+                android:title="Select algorithm"
+                android:enabled="false"
+                android:checkable="false"/>
+
+            <group>
+                <item
+                    android:id="@+id/sha1_algorithm"
+                    android:title="SHA1"
+                    app:showAsAction="collapseActionView" />
+
+                <item
+                    android:id="@+id/sha256_algorithm"
+                    android:title="SHA256"
+                    app:showAsAction="collapseActionView" />
+
+                <item
+                    android:id="@+id/sha512_algorithm"
+                    android:title="SHA512"
+                    app:showAsAction="collapseActionView" />
+            </group>
+        </menu>
+    </item>
+
+</menu>

@@ -56,6 +56,7 @@ class TwoAuthFragment : Fragment() {
                     is AuthenticationState.Success -> {
                         findNavController().navigate(R.id.navigate_twoAuthFragment_to_mainActivity)
                         requireActivity().finish()
+                        binding?.progressIndicator?.visibility = View.GONE
                         twoAuthViewModel.clearState()
                     }
 
@@ -63,15 +64,28 @@ class TwoAuthFragment : Fragment() {
                         FirebaseAuth.getInstance().signOut()
                         Toast.makeText(requireContext(),twoAuthState.errorMsg, Toast.LENGTH_LONG).show()
                         findNavController().navigate(R.id.navigate_twoAuthFragment_to_logInFragment)
+                        binding?.progressIndicator?.visibility = View.GONE
+                        binding?.dimOverlay?.visibility = View.GONE
                         twoAuthViewModel.clearState()
                     }
 
                     is AuthenticationState.Error -> {
                         Toast.makeText(requireContext(),twoAuthState.errorMsg, Toast.LENGTH_LONG).show()
+                        binding?.progressIndicator?.visibility = View.GONE
+                        binding?.dimOverlay?.visibility = View.GONE
                         twoAuthViewModel.clearState()
                     }
 
-                    else -> {}
+                    is AuthenticationState.Loading -> {
+                        binding?.progressIndicator?.visibility = View.VISIBLE
+                        binding?.dimOverlay?.visibility = View.VISIBLE
+                    }
+
+                    else -> {
+                        binding?.progressIndicator?.visibility = View.GONE
+                        binding?.dimOverlay?.visibility = View.GONE
+                        twoAuthViewModel.clearState()
+                    }
                 }
             }
         }

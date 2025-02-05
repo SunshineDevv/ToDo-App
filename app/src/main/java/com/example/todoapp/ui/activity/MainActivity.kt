@@ -24,7 +24,7 @@ import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener {
+class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener , ToolbarManager{
 
     private var binding: ActivityMainBinding? = null
 
@@ -55,7 +55,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 insets
             }
         }
-        handleBackPress()
     }
 
     private fun setupActionBar() {
@@ -136,25 +135,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         return true
     }
 
-    private fun handleBackPress() {
-        val navController = findNavController()
-        val callback = object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                if (binding?.drawerLayout?.isDrawerOpen(GravityCompat.START) == true) {
-                    binding?.drawerLayout?.closeDrawer(GravityCompat.START)
-                } else if (navController.currentDestination?.id == R.id.noteFragment ||
-                    navController.currentDestination?.id == R.id.updateNoteFragment ||
-                    navController.currentDestination?.id == R.id.securityFragment
-                ) {
-                    navController.popBackStack()
-                } else {
-                    finish()
-                }
-            }
-        }
-        onBackPressedDispatcher.addCallback(this, callback)
-    }
-
     private fun setupDrawerToggle(){
         drawerToggle = ActionBarDrawerToggle(
             this, binding?.drawerLayout, binding?.toolbar,
@@ -187,4 +167,37 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         super.onDestroy()
         binding = null
     }
+
+    override fun showBackButton(show: Boolean) {
+        supportActionBar?.setDisplayHomeAsUpEnabled(show)
+        supportActionBar?.setHomeButtonEnabled(show)
+        binding?.toolbar?.setNavigationOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
+        }
+
+    }
+
+    override fun enableDrawer(enabled: Boolean) {
+        drawerToggle.isDrawerIndicatorEnabled = enabled
+        if(enabled){
+            drawerToggle.syncState()
+            binding?.toolbar?.setNavigationOnClickListener {
+                binding?.drawerLayout?.openDrawer(GravityCompat.START)
+            }
+        }
+    }
+
+    override fun setNavigationIcon(isBackArrow: Boolean) {
+        if (isBackArrow) {
+            supportActionBar?.setHomeAsUpIndicator(R.drawable.ic_back)
+        } else {
+            drawerToggle.syncState()
+        }
+    }
+}
+
+interface ToolbarManager {
+    fun showBackButton(show: Boolean)
+    fun enableDrawer(enabled: Boolean)
+    fun setNavigationIcon(isBackArrow: Boolean)
 }

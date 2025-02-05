@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.todoapp.R
 import com.example.todoapp.databinding.FragmentLogInBinding
+import com.example.todoapp.ui.activity.ActivityUIController
 import com.example.todoapp.ui.fragment.auth.AuthenticationState
 import com.example.todoapp.ui.fragment.security.SecurePreferencesHelper
 import com.google.android.material.snackbar.Snackbar
@@ -58,22 +59,30 @@ class LogInFragment : Fragment() {
     private fun initObservers() {
         lifecycleScope.launch {
             logInViewModel.logInState.flowWithLifecycle(lifecycle).collectLatest { logInState ->
+                val activityUI = requireActivity() as ActivityUIController
                 when (logInState) {
                     is AuthenticationState.SuccessNewUser -> {
                         findNavController().navigate(R.id.navigate_logInFragment_to_mainActivity)
                         requireActivity().finish()
+                        activityUI.showProgressBar(false)
                         logInViewModel.clearState()
                     }
 
                     is AuthenticationState.SuccessNoSecureEnable -> {
                         findNavController().navigate(R.id.navigate_logInFragment_to_mainActivity)
                         requireActivity().finish()
+                        activityUI.showProgressBar(false)
                         logInViewModel.clearState()
                     }
 
                     is AuthenticationState.SuccessWithSecureEnable -> {
                         findNavController().navigate(R.id.navigate_logInFragment_to_twoAuthFragment)
+                        activityUI.showProgressBar(false)
                         logInViewModel.clearState()
+                    }
+
+                    is AuthenticationState.Loading -> {
+                        activityUI.showProgressBar(true)
                     }
 
                     is AuthenticationState.Error -> {
@@ -82,10 +91,14 @@ class LogInFragment : Fragment() {
                                 .setAction("OK"){}
                                 .show()
                         }
+                        activityUI.showProgressBar(false)
                         logInViewModel.clearState()
                     }
 
-                    else -> {}
+                    else -> {
+                        activityUI.showProgressBar(false)
+                        logInViewModel.clearState()
+                    }
                 }
             }
         }

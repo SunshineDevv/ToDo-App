@@ -31,6 +31,7 @@ class TwoAuthVIewModel @Inject constructor(
     private val maxAttempts = 3
 
     fun validateUserInputCode(userInputCode: String) {
+        _twoAuthState.value = AuthenticationState.Loading
         try {
             Log.i("CheckToken", otpManager.validateToken(userInputCode).toString())
             if (otpManager.validateToken(userInputCode)) {

@@ -45,7 +45,7 @@ class ForgetPassViewModel @Inject constructor(
                 } else {
                     val errorMessage =
                         task.exception?.localizedMessage ?: "Failed to reset password!"
-                    _resetState.value = AuthenticationState.Error(errorMessage)
+                    _resetState.value = AuthenticationState.ErrorReset(errorMessage)
                 }
             }
     }

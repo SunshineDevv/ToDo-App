@@ -100,6 +100,8 @@ android {
         implementation(libs.commons.codec)
 
         implementation (libs.androidx.security.crypto)
+
+        implementation (libs.androidx.biometric)
     }
 }
 dependencies {

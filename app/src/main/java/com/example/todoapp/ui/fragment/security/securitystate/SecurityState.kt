@@ -5,4 +5,5 @@ sealed class SecurityState {
     data class Error(val errorMsg: String?) : SecurityState()
     data class LoadingData(val secret: String, val base32secret: String, val otpUri: String) : SecurityState()
     data object Empty : SecurityState()
+    data object Loading : SecurityState()
 }

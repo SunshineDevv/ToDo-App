@@ -23,7 +23,7 @@ import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class AuthActivity : AppCompatActivity() {
+class AuthActivity : AppCompatActivity(), ActivityUIController {
 
     private var binding: ActivityAuthBinding? = null
 
@@ -201,6 +201,17 @@ class AuthActivity : AppCompatActivity() {
             }
         }
     }
+    override fun showProgressBar(show: Boolean) {
+        if (show){
+            binding?.progressIndicator?.visibility = View.VISIBLE
+            binding?.dimOverlay?.visibility = View.VISIBLE
+        } else {
+            binding?.progressIndicator?.visibility = View.GONE
+            binding?.dimOverlay?.visibility = View.GONE
+        }
+    }
+}
 
-
+interface ActivityUIController {
+    fun showProgressBar(show: Boolean)
 }

@@ -3,7 +3,6 @@ package com.example.todoapp.ui.fragment.security
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.util.Log
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -29,50 +28,78 @@ class UnifiedOtpManager @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
     private val codeDigits = 6
-    private val algorithm = "HmacSHA256"
     private val timeStep = 30L
     private val timeUnit = TimeUnit.SECONDS
 
-    private val sizeOfSecretInBytes = 16
+    private val sizeOfSecretInBytes = MutableStateFlow(0)
 
     private val secretFlow = MutableStateFlow<ByteArray?>(null)
+
+    private val algorithm = MutableStateFlow("")
+
+    init {
+        initAlgorithmFromPrefs()
+    }
+
+    private fun initAlgorithmFromPrefs() {
+        val savedAlgorithm = SecurePreferencesHelper.getEnum(context)
+        if (savedAlgorithm.isNotEmpty()) {
+            algorithm.value = savedAlgorithm
+            sizeOfSecretInBytes.value = ShaAlgorithm.entries.find { it.algorithm == algorithm.value }?.sizeOfSecret ?: 32
+        }
+    }
+
+    fun updateAlgorithm(newAlgorithm: ShaAlgorithm) {
+        algorithm.value = newAlgorithm.algorithm
+        sizeOfSecretInBytes.value = newAlgorithm.sizeOfSecret
+        SecurePreferencesHelper.saveEnum(context, newAlgorithm)
+    }
+
+    fun clearAlgorithm(){
+        algorithm.value = ""
+    }
 
     fun updateSecret(newSecret: String) {
         val encodedSecret = Base32().decode(newSecret.uppercase().replace("=", ""))
         secretFlow.value = encodedSecret
     }
 
-    fun generateReadableSecret(length: Int = sizeOfSecretInBytes): String {
+    fun generateReadableSecret(): String {
+        if (algorithm.value == ""){
+            algorithm.value = ShaAlgorithm.SHA256.algorithm
+            sizeOfSecretInBytes.value = ShaAlgorithm.SHA256.sizeOfSecret
+        }
         val allowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
         val random = SecureRandom()
-        val secret = (1..length)
+        return (1..sizeOfSecretInBytes.value)
             .map { allowedChars[random.nextInt(allowedChars.length)] }
             .joinToString("")
-        return secret
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     fun tokenFlow(): Flow<String?> {
-        return secretFlow.flatMapLatest { secret ->
-            flow {
-                if (secret != null) {
-                    if (secret.isEmpty()) {
-                        emit("000000")
-                        return@flow
+        return algorithm.flatMapLatest {
+            secretFlow.flatMapLatest { secret ->
+                flow {
+                    if (secret != null) {
+                        if (secret.isEmpty()) {
+                            emit("")
+                            return@flow
+                        }
                     }
-                }
-                while (true) {
-                    val currentTime = System.currentTimeMillis()
-                    val currentCounter = currentTime / timeUnit.toMillis(timeStep)
+                    while (true) {
+                        val currentTime = System.currentTimeMillis()
+                        val currentCounter = currentTime / timeUnit.toMillis(timeStep)
 
-                    val currentToken = secret?.let { generateTokenForCounter(it, currentCounter) }
-                    emit(currentToken)
+                        val currentToken = secret?.let { generateTokenForCounter(it, currentCounter) }
+                        emit(currentToken)
 
-                    val nextExecutionTime =
-                        ((currentTime / timeUnit.toMillis(timeStep)) + 1) * timeUnit.toMillis(
-                            timeStep
-                        )
-                    delay(nextExecutionTime - currentTime)
+                        val nextExecutionTime =
+                            ((currentTime / timeUnit.toMillis(timeStep)) + 1) * timeUnit.toMillis(
+                                timeStep
+                            )
+                        delay(nextExecutionTime - currentTime)
+                    }
                 }
             }
         }.flowOn(Dispatchers.Default)
@@ -80,48 +107,25 @@ class UnifiedOtpManager @Inject constructor(
 
     fun takeSecret(): ByteArray {
         val secret = SecurePreferencesHelper.getSecret(context) ?: return ByteArray(0)
-        val decryptedSecret = KeystoreHelper.decryptData(secret) ?: return ByteArray(0)
+        val decryptedSecret = KeystoreHelper.decryptData(secret)
 
         return try {
             val decodedSecret = Base32().decode(decryptedSecret)
             secretFlow.value = decodedSecret
             decodedSecret
         } catch (e: Exception) {
-            ByteArray(0)  // Возвращаем пустой массив при ошибке декодирования
+            ByteArray(0)
         }
     }
 
     fun validateToken(inputCode: String): Boolean {
         val secretKey = takeSecret()
 
-        if (secretKey == null || secretKey.isEmpty()) {
-            Log.w("OTP_Validation", "⚠️ Warning: Secret key is missing or empty.")
-            return false
-        }
-
+        if (secretKey.isEmpty()) return false
         val currentCounter = currentCounter()
 
-        Log.i("OTP_Validation", "🔍 Incoming code: $inputCode")
-        Log.i("OTP_Validation", "🕒 Current counter: $currentCounter")
-
         return (-1..1).any { offset ->
-            val generatedToken = generateTokenForCounter(secretKey, currentCounter + offset)
-
-            Log.d(
-                "OTP_Validation",
-                "🔄 Checking generated token: $generatedToken (offset = $offset, counter = ${currentCounter + offset})"
-            )
-
-            val isMatch = inputCode == generatedToken
-            if (isMatch) {
-                Log.i("OTP_Validation", "✅ Token matched! Authentication successful.")
-            }
-
-            isMatch
-        }.also { result ->
-            if (!result) {
-                Log.e("OTP_Validation", "❌ Error: The entered code does not match any valid OTPs.")
-            }
+            inputCode == generateTokenForCounter(secretKey, currentCounter + offset)
         }
     }
 
@@ -140,7 +144,8 @@ class UnifiedOtpManager @Inject constructor(
         val secretKey = takeSecret()
         if (secretKey.isEmpty()) return ""
         val encodedSecret = Base32().encodeToString(secretKey).replace("=", "")
-        return "otpauth://totp/$issuer:$account?secret=$encodedSecret&issuer=$issuer&algorithm=SHA256&digits=$codeDigits&period=$timeStep"
+        val algorithm = algorithm.value.removePrefix("Hmac")
+        return "otpauth://totp/$issuer:$account?secret=$encodedSecret&issuer=$issuer&algorithm=$algorithm&digits=$codeDigits&period=$timeStep"
     }
 
     fun generateQrCode(content: String): Bitmap? {
@@ -162,8 +167,12 @@ class UnifiedOtpManager @Inject constructor(
     }
 
     private fun calculateHmac(key: ByteArray, counter: Long): ByteArray {
-        val mac = Mac.getInstance(algorithm)
-        mac.init(SecretKeySpec(key, algorithm))
+        if (algorithm.value == ""){
+            algorithm.value = ShaAlgorithm.SHA256.algorithm
+            sizeOfSecretInBytes.value = ShaAlgorithm.SHA256.sizeOfSecret
+        }
+        val mac = Mac.getInstance(algorithm.value)
+        mac.init(SecretKeySpec(key, algorithm.value))
         return mac.doFinal(ByteBuffer.allocate(8).putLong(counter).array())
     }
 

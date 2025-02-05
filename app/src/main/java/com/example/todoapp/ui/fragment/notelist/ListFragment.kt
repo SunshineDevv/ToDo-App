@@ -1,7 +1,6 @@
 package com.example.todoapp.ui.fragment.notelist
 
 import android.os.Bundle
-import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.Menu
@@ -22,11 +21,9 @@ import androidx.window.layout.WindowMetricsCalculator
 import com.example.todoapp.ui.fragment.note.NoteModel
 import com.example.todoapp.R
 import com.example.todoapp.databinding.FragmentListBinding
+import com.example.todoapp.ui.activity.ToolbarManager
 import com.example.todoapp.ui.adapter.notelist.ListAdapter
 import com.example.todoapp.ui.fragment.State
-import com.example.todoapp.ui.fragment.security.SecurePreferencesHelper
-import com.google.firebase.Firebase
-import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -167,10 +164,17 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
         lifecycleScope.launch {
             noteListViewModel.isSelectionMode.flowWithLifecycle(lifecycle)
                 .collectLatest { isSelectionMode ->
+                    val toolbarManager = requireActivity() as ToolbarManager
                     listAdapter.setSelectionMode(isSelectionMode)
                     if (isSelectionMode) {
+                        toolbarManager.showBackButton(true)
+                        toolbarManager.enableDrawer(false)
+                        toolbarManager.setNavigationIcon(true)
                         binding?.actionButton?.setImageResource(R.drawable.baseline_delete_24)
                     } else {
+                        toolbarManager.showBackButton(false)
+                        toolbarManager.enableDrawer(true)
+                        toolbarManager.setNavigationIcon(false)
                         binding?.actionButton?.setImageResource(R.drawable.baseline_add_52)
                     }
                 }

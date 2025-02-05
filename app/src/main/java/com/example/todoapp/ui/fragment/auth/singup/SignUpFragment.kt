@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.todoapp.R
 import com.example.todoapp.databinding.FragmentSignUpBinding
+import com.example.todoapp.ui.activity.ActivityUIController
 import com.example.todoapp.ui.fragment.auth.AuthenticationState
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -60,10 +61,12 @@ class SignUpFragment : Fragment() {
         lifecycleScope.launch {
             signUpViewModel.registrationState.flowWithLifecycle(lifecycle)
                 .collectLatest { registrationState ->
+                    val activityUI = requireActivity() as ActivityUIController
                     when (registrationState) {
                         is AuthenticationState.Success -> {
                             findNavController().navigate(R.id.navigate_signUpFragment_to_mainActivity)
                             requireActivity().finish()
+                            activityUI.showProgressBar(false)
                             signUpViewModel.clearState()
                         }
 
@@ -73,10 +76,18 @@ class SignUpFragment : Fragment() {
                                     .setAction("OK"){}
                                     .show()
                             }
+                            activityUI.showProgressBar(false)
                             signUpViewModel.clearState()
                         }
 
-                        else -> {}
+                        is AuthenticationState.Loading -> {
+                            activityUI.showProgressBar(true)
+                        }
+
+                        else -> {
+                            activityUI.showProgressBar(false)
+                            signUpViewModel.clearState()
+                        }
                     }
                 }
         }

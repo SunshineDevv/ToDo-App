@@ -44,6 +44,26 @@ object SecurePreferencesHelper {
         return encryptedSecretHex?.decodeHex()
     }
 
+    fun saveEnum(context: Context, enumValue: ShaAlgorithm) {
+        val encryptedEnum = Base32().encodeToString(enumValue.algorithm.toByteArray(Charsets.UTF_8)).replace("=", "")
+        getPrefs(context).edit().putString("encrypted_enum_${auth.currentUser?.uid}", encryptedEnum).apply()
+    }
+
+    fun getEnum(context: Context): String {
+        val encryptedEnum = getPrefs(context).getString("encrypted_enum_${auth.currentUser?.uid}", null)
+
+        return try {
+            val decodedBytes = Base32().decode(encryptedEnum)
+            String(decodedBytes, Charsets.UTF_8)
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
+    fun clearEnum(context: Context) {
+        getPrefs(context).edit().remove("encrypted_enum_${auth.currentUser?.uid}").apply()
+    }
+
     fun clearSecret(context: Context) {
         val prefs = getPrefs(context)
         val editor = prefs.edit()
