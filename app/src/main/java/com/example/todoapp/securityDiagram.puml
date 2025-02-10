@@ -1,0 +1,126 @@
+@startuml
+' ========== Пакет Безопасности ==========
+package "com.example.todoapp.ui.fragment.security" {
+    class SecurityFragment {
+        - securityViewModel: SecurityViewModel
+        + openGoogleAuthenticator()
+    }
+
+    class SecurityViewModel {
+        - repository: UserRepository
+        - otpManager: UnifiedOtpManager
+        - keystoreHelper: KeystoreHelper
+        - securePrefsHelper: SecurePreferencesHelper
+        - isSecure: MutableStateFlow<Int>
+        + generateNewSecret()
+        + setCustomSecret()
+        + setSecureDisable()
+        + encryptSensitiveData(data: String)
+        + decryptSensitiveData(encryptedData: String)
+    }
+
+    class KeystoreHelper {
+        + generateSecretKey()
+        + encryptData(data: String): String
+        + decryptData(encryptedData: String): String
+    }
+
+    class SecurePreferencesHelper {
+        + saveSecret(secret: String)
+        + getSecret(): String
+        + clearSecret()
+    }
+
+    class UnifiedOtpManager {
+        + generateReadableSecret(): String
+        + validateToken(token: String): Boolean
+        + generateQrCode(secret: String): Bitmap
+    }
+
+    SecurityFragment --> SecurityViewModel
+    SecurePreferencesHelper --> KeystoreHelper
+    UnifiedOtpManager --> SecurePreferencesHelper
+}
+
+' ========== Пакет Аутентификации ==========
+package "com.example.todoapp.ui.fragment.auth" {
+    class LogInFragment {
+        - logInViewModel: LoginViewModel
+        + onViewCreated(view, savedInstanceState)
+    }
+
+    class LoginViewModel {
+        - repository: UserRepository
+        + logInUser(email: String, password: String)
+    }
+
+    class TwoAuthFragment {
+        - twoAuthViewModel: TwoAuthViewModel
+        + onViewCreated(view, savedInstanceState)
+    }
+
+    class TwoAuthViewModel {
+        - otpManager: UnifiedOtpManager
+        - securePrefsHelper: SecurePreferencesHelper
+        + validateUserInputCode(userInputCode: String)
+        + storeOtpSecret(secret: String)
+    }
+
+    class SignUpFragment {
+        - signUpViewModel: SignUpViewModel
+        + onViewCreated(view, savedInstanceState)
+    }
+
+    class SignUpViewModel {
+        - repository: UserRepository
+        + registerNewUser(email: String, password: String, name: String, confirmPassword: String)
+    }
+
+    LogInFragment --> LoginViewModel
+    TwoAuthFragment --> TwoAuthViewModel
+    SignUpFragment --> SignUpViewModel
+    TwoAuthViewModel --> SecurePreferencesHelper
+}
+
+' ========== Пакет DAO (Работа с БД) ==========
+package "com.example.todoapp.database.dao" {
+    interface UserDao {
+        + upsertUser(userDb: UserDb)
+        + markUserAsSecure(id: String)
+        + markUserAsNotSecure(id: String)
+        + isUserSecure(id: String): Int
+    }
+
+    UserDao --> UserDb
+}
+
+' ========== Пакет Моделей ==========
+package "com.example.todoapp.database.model" {
+    class UserDb {
+        + userId: String
+        + userImg: String?
+        + securityEnabled: Boolean
+    }
+}
+
+' ========== Пакет Репозиториев ==========
+package "com.example.todoapp.database.repository" {
+    class UserRepository {
+        - userDao: UserDao
+        + upsert(user: UserDb)
+        + markUserAsSecure(id: String)
+        + markUserAsNotSecure(id: String)
+        + isUserSecure(id: String): Int
+    }
+
+    UserRepository --> UserDao
+}
+
+' ========== Связи ==========
+SecurityViewModel --> UserRepository
+TwoAuthViewModel --> UnifiedOtpManager
+SecurityViewModel --> SecurePreferencesHelper
+SecurityViewModel --> KeystoreHelper
+SecurityViewModel --> UnifiedOtpManager
+
+@enduml

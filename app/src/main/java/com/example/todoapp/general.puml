@@ -1,0 +1,136 @@
+@startuml
+' ========== Головна структура застосунку (Вертикальне розташування) ==========
+
+' ---------- UI (Інтерфейс) ----------
+package "UI (Fragments)" {
+    class MainActivity {
+        + відображає основний інтерфейс
+    }
+
+    class AuthActivity {
+        + керує екранами входу та реєстрації
+    }
+
+    class NoteFragment {
+        + відображає окрему нотатку
+    }
+
+    class ListFragment {
+        + показує список нотаток
+    }
+
+    class UpdateNoteFragment {
+        + редагування нотатки
+    }
+
+    class SecurityFragment {
+        + Налаштування безпеки
+    }
+
+    class TwoAuthFragment {
+        + Перевірка коду 2FA
+    }
+
+    class LoginFragment {
+        + Вхід користувача
+    }
+
+    class SignUpFragment {
+        + Реєстрація нового користувача
+    }
+
+}
+
+' ---------- ViewModel (Бізнес-логіка) ----------
+package "ViewModel" {
+    class LoginViewModel {
+        + логін користувача
+    }
+
+    class SignUpViewModel {
+        + реєстрація користувача
+    }
+
+    class NoteViewModel {
+        + керує нотатками
+    }
+
+    class SecurityViewModel {
+        + керує безпекою (шифрування, 2FA)
+    }
+}
+
+' ---------- Репозиторії ----------
+package "Repository" {
+    class UserRepository {
+        + робота з даними користувача
+    }
+
+    class NoteRepository {
+        + робота з нотатками
+    }
+}
+
+' ---------- DAO (База даних) ----------
+package "DAO" {
+    interface UserDao {
+        + збереження користувачів
+    }
+
+    interface NoteDao {
+        + збереження нотаток
+    }
+}
+
+' ---------- Моделі ----------
+package "Models" {
+    class UserDb {
+
+    }
+
+    class NoteDb {
+
+    }
+}
+
+' ---------- Безпека ----------
+package "Security" {
+    class KeystoreHelper {
+        + шифрує та розшифровує дані
+    }
+
+    class SecurePreferencesHelper {
+        + зберігає секретні ключі 2FA
+    }
+
+    class UnifiedOtpManager {
+        + генерує та перевіряє OTP-коди
+    }
+}
+
+' ========== Взаємозв’язки (Вертикальне розташування) ==========
+
+MainActivity --> ListFragment
+MainActivity --> NoteFragment
+MainActivity --> UpdateNoteFragment
+MainActivity --> SecurityFragment
+
+LoginFragment --> TwoAuthFragment
+AuthActivity --> LoginFragment
+AuthActivity --> SignUpFragment
+
+LoginViewModel --> UserRepository
+SignUpViewModel --> UserRepository
+NoteViewModel --> NoteRepository
+
+UserRepository --> UserDao
+NoteRepository --> NoteDao
+
+UserDao --> UserDb
+NoteDao --> NoteDb
+
+SecurityViewModel --> KeystoreHelper
+SecurityViewModel --> SecurePreferencesHelper
+SecurityViewModel --> UnifiedOtpManager
+
+@enduml
