@@ -1,5 +1,6 @@
 package com.example.todoapp.ui.fragment.security
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -59,7 +60,7 @@ class SecurityFragment : Fragment() {
         }
 
         binding?.disableTwoFactorButton?.setOnClickListener {
-            if (securityViewModel.getSecureStatus() == 1) {
+            if (securityViewModel.getSecureStatus()) {
                 securityViewModel.setSecureDisable()
                 setEmptyFields()
                 Toast.makeText(
@@ -87,8 +88,7 @@ class SecurityFragment : Fragment() {
 
         lifecycleScope.launch {
             securityViewModel.isSecure.flowWithLifecycle(lifecycle).collectLatest {
-                if (it == 1) {
-                    KeystoreHelper.generateSecretKey()
+                if (it) {
                     binding?.clickQrCodeTextView?.visibility = View.VISIBLE
                 }
             }
@@ -143,7 +143,7 @@ class SecurityFragment : Fragment() {
     }
 
     private fun handleAlgorithmSelection(algorithm: ShaAlgorithm) {
-        if (securityViewModel.getSecureStatus() == 1) {
+        if (securityViewModel.getSecureStatus()) {
             CustomConfirmationDialog.newInstance(
                 title = "Change algorithm",
                 message = "Do you really want to change algorithm?\nIf you click \"Yes\" then you will have to reconnect 2FA with the selected algorithm",
@@ -226,6 +226,7 @@ class SecurityFragment : Fragment() {
         }
     }
 
+    @SuppressLint("SetTextI18n")
     private fun setEmptyFields() {
         binding?.apply {
             codeEditText.setText("")

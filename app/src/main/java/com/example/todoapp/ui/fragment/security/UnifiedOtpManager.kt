@@ -1,11 +1,10 @@
 package com.example.todoapp.ui.fragment.security
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Color
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
-import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -14,6 +13,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.launch
 import org.apache.commons.codec.binary.Base32
 import java.nio.ByteBuffer
 import java.security.SecureRandom
@@ -24,9 +24,7 @@ import javax.inject.Inject
 import kotlin.experimental.and
 import kotlin.math.pow
 
-class UnifiedOtpManager @Inject constructor(
-    @ApplicationContext private val context: Context,
-) {
+class UnifiedOtpManager @Inject constructor() {
     private val codeDigits = 6
     private val timeStep = 30L
     private val timeUnit = TimeUnit.SECONDS
@@ -38,24 +36,27 @@ class UnifiedOtpManager @Inject constructor(
     private val algorithm = MutableStateFlow("")
 
     init {
-        initAlgorithmFromPrefs()
-    }
-
-    private fun initAlgorithmFromPrefs() {
-        val savedAlgorithm = SecurePreferencesHelper.getEnum(context)
-        if (savedAlgorithm.isNotEmpty()) {
-            algorithm.value = savedAlgorithm
-            sizeOfSecretInBytes.value = ShaAlgorithm.entries.find { it.algorithm == algorithm.value }?.sizeOfSecret ?: 32
+        CoroutineScope(Dispatchers.IO).launch {
+            initAlgorithmFromPrefs()
         }
     }
 
-    fun updateAlgorithm(newAlgorithm: ShaAlgorithm) {
-        algorithm.value = newAlgorithm.algorithm
-        sizeOfSecretInBytes.value = newAlgorithm.sizeOfSecret
-        SecurePreferencesHelper.saveEnum(context, newAlgorithm)
+    private suspend fun initAlgorithmFromPrefs() {
+        val savedAlgorithm = FirestoreDataManager.getAlgorithm()
+        if (savedAlgorithm.isNotEmpty()) {
+            algorithm.value = savedAlgorithm
+            sizeOfSecretInBytes.value =
+                ShaAlgorithm.entries.find { it.algorithm == algorithm.value }?.sizeOfSecret ?: 32
+        }
     }
 
-    fun clearAlgorithm(){
+    suspend fun updateAlgorithm(newAlgorithm: ShaAlgorithm) {
+        algorithm.value = newAlgorithm.algorithm
+        sizeOfSecretInBytes.value = newAlgorithm.sizeOfSecret
+        FirestoreDataManager.saveAlgorithm(newAlgorithm)
+    }
+
+    fun clearAlgorithm() {
         algorithm.value = ""
     }
 
@@ -65,7 +66,7 @@ class UnifiedOtpManager @Inject constructor(
     }
 
     fun generateReadableSecret(): String {
-        if (algorithm.value == ""){
+        if (algorithm.value == "") {
             algorithm.value = ShaAlgorithm.SHA256.algorithm
             sizeOfSecretInBytes.value = ShaAlgorithm.SHA256.sizeOfSecret
         }
@@ -91,7 +92,8 @@ class UnifiedOtpManager @Inject constructor(
                         val currentTime = System.currentTimeMillis()
                         val currentCounter = currentTime / timeUnit.toMillis(timeStep)
 
-                        val currentToken = secret?.let { generateTokenForCounter(it, currentCounter) }
+                        val currentToken =
+                            secret?.let { generateTokenForCounter(it, currentCounter) }
                         emit(currentToken)
 
                         val nextExecutionTime =
@@ -105,27 +107,46 @@ class UnifiedOtpManager @Inject constructor(
         }.flowOn(Dispatchers.Default)
     }
 
-    fun takeSecret(): ByteArray {
-        val secret = SecurePreferencesHelper.getSecret(context) ?: return ByteArray(0)
-        val decryptedSecret = KeystoreHelper.decryptData(secret)
+    fun takeSecret(callback: (ByteArray) -> Unit) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val encryptedSecret = FirestoreDataManager.getSecret()
+            if (encryptedSecret == null) {
+                callback(ByteArray(0))
+                return@launch
+            }
 
-        return try {
-            val decodedSecret = Base32().decode(decryptedSecret)
-            secretFlow.value = decodedSecret
-            decodedSecret
-        } catch (e: Exception) {
-            ByteArray(0)
+            FirestoreSecurityHelper.decryptData(encryptedSecret) { decryptedSecret ->
+                if (decryptedSecret == null) {
+                    callback(ByteArray(0))
+                    return@decryptData
+                }
+                try {
+                    val decodedSecret = Base32().decode(decryptedSecret)
+                    secretFlow.value = decodedSecret
+                    callback(decodedSecret)
+                } catch (e: Exception) {
+                    callback(ByteArray(0))
+                }
+            }
         }
     }
 
-    fun validateToken(inputCode: String): Boolean {
-        val secretKey = takeSecret()
 
-        if (secretKey.isEmpty()) return false
-        val currentCounter = currentCounter()
+    fun validateToken(inputCode: String, callback: (Boolean) -> Unit) {
+        takeSecret { secretKey ->
+            if (secretKey.isEmpty()) {
+                callback(false)
+                return@takeSecret
+            }
 
-        return (-1..1).any { offset ->
-            inputCode == generateTokenForCounter(secretKey, currentCounter + offset)
+            val currentCounter = currentCounter()
+
+            val isValid = (-1..1).any { offset ->
+                val generatedToken = generateTokenForCounter(secretKey, currentCounter + offset)
+                inputCode == generatedToken
+            }
+
+            callback(isValid)
         }
     }
 
@@ -140,12 +161,20 @@ class UnifiedOtpManager @Inject constructor(
         return otp.toString().padStart(codeDigits, '0')
     }
 
-    fun buildOtpUri(account: String, issuer: String): String {
-        val secretKey = takeSecret()
-        if (secretKey.isEmpty()) return ""
-        val encodedSecret = Base32().encodeToString(secretKey).replace("=", "")
-        val algorithm = algorithm.value.removePrefix("Hmac")
-        return "otpauth://totp/$issuer:$account?secret=$encodedSecret&issuer=$issuer&algorithm=$algorithm&digits=$codeDigits&period=$timeStep"
+    fun buildOtpUri(account: String, issuer: String, callback: (String) -> Unit) {
+        takeSecret { secretKey ->
+            if (secretKey.isEmpty()) {
+                callback("")
+                return@takeSecret
+            }
+
+            val encodedSecret = Base32().encodeToString(secretKey).replace("=", "")
+            val algorithm = algorithm.value.removePrefix("Hmac")
+
+            val otpUri =
+                "otpauth://totp/$issuer:$account?secret=$encodedSecret&issuer=$issuer&algorithm=$algorithm&digits=$codeDigits&period=$timeStep"
+            callback(otpUri)
+        }
     }
 
     fun generateQrCode(content: String): Bitmap? {
@@ -167,7 +196,7 @@ class UnifiedOtpManager @Inject constructor(
     }
 
     private fun calculateHmac(key: ByteArray, counter: Long): ByteArray {
-        if (algorithm.value == ""){
+        if (algorithm.value == "") {
             algorithm.value = ShaAlgorithm.SHA256.algorithm
             sizeOfSecretInBytes.value = ShaAlgorithm.SHA256.sizeOfSecret
         }

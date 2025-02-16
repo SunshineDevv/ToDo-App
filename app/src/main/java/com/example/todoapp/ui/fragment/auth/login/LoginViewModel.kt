@@ -3,9 +3,8 @@ package com.example.todoapp.ui.fragment.auth.login
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.todoapp.database.model.UserDb
-import com.example.todoapp.database.repository.UserRepository
 import com.example.todoapp.ui.fragment.auth.AuthenticationState
+import com.example.todoapp.ui.fragment.security.FirestoreDataManager
 import com.example.todoapp.ui.fragment.security.SecurePreferencesHelper
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -14,7 +13,6 @@ import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.auth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -22,8 +20,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
-    private val repository: UserRepository,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private lateinit var auth: FirebaseAuth
@@ -44,27 +41,16 @@ class LoginViewModel @Inject constructor(
                         val userId = auth.currentUser?.uid
                         userId?.let {
                             viewModelScope.launch {
-                                if (repository.isUserExists(userId) == 1) {
-                                    val secure = repository.isUserSecure(userId)
-                                    if (secure == 0) {
-                                        SecurePreferencesHelper.saveSuccess(context, "")
-                                        _logInState.value =
-                                            AuthenticationState.SuccessNoSecureEnable
-                                    } else {
-                                        SecurePreferencesHelper.saveSuccess(context, "false")
-                                        _logInState.value =
-                                            AuthenticationState.SuccessWithSecureEnable
-                                    }
-                                } else {
-                                    repository.upsert(
-                                        UserDb(
-                                            userId = userId,
-                                            userImg = null,
-                                            securityEnabled = false
-                                        )
-                                    )
+                                val secure = FirestoreDataManager.getUserStatus()
+                                if (!secure) {
                                     SecurePreferencesHelper.saveSuccess(context, "")
-                                    _logInState.value = AuthenticationState.SuccessNewUser
+                                    FirestoreDataManager.saveSessionId(context)
+                                    _logInState.value =
+                                        AuthenticationState.SuccessNoSecureEnable
+                                } else {
+                                    SecurePreferencesHelper.saveSuccess(context, "false")
+                                    _logInState.value =
+                                        AuthenticationState.SuccessWithSecureEnable
                                 }
                             }
                         }

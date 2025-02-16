@@ -4,9 +4,8 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.todoapp.database.model.UserDb
-import com.example.todoapp.database.repository.UserRepository
 import com.example.todoapp.ui.fragment.auth.AuthenticationState
+import com.example.todoapp.ui.fragment.security.FirestoreDataManager
 import com.example.todoapp.ui.fragment.security.SecurePreferencesHelper
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -21,8 +20,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SignUpViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
-    private val repository: UserRepository
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private lateinit var auth: FirebaseAuth
@@ -55,11 +53,10 @@ class SignUpViewModel @Inject constructor(
 
                             user?.updateProfile(profileUpdates)?.addOnCompleteListener { updateTask ->
                                 if (updateTask.isSuccessful) {
-                                    val uid = user.uid
                                     viewModelScope.launch {
                                         try {
                                             SecurePreferencesHelper.saveSuccess(context, "")
-                                            repository.upsert(UserDb(userId = uid, userImg = null, securityEnabled = false))
+                                            FirestoreDataManager.saveSessionId(context)
                                             _registrationState.value = AuthenticationState.Success
                                         } catch (e: Exception) {
                                             _registrationState.value =

@@ -1,26 +1,21 @@
 package com.example.todoapp.ui.fragment.security
 
-import android.content.Context
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.todoapp.database.repository.UserRepository
 import com.example.todoapp.ui.fragment.security.securitystate.SecurityState
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.apache.commons.codec.binary.Base32
 import javax.inject.Inject
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 @HiltViewModel
 class SecurityViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
-    private val repository: UserRepository,
     private val otpManager: UnifiedOtpManager
 ) : ViewModel() {
 
@@ -32,7 +27,7 @@ class SecurityViewModel @Inject constructor(
     private val _secretKey = MutableStateFlow("")
     val secretKey = _secretKey.asStateFlow()
 
-    private val _isSecure = MutableStateFlow(0)
+    private val _isSecure = MutableStateFlow(false)
     val isSecure = _isSecure.asStateFlow()
 
     private val _token = MutableStateFlow("")
@@ -43,34 +38,50 @@ class SecurityViewModel @Inject constructor(
 
     fun onStart() {
         viewModelScope.launch {
+            val savedAlgorithm = FirestoreDataManager.getAlgorithm()
+            _currentAlgorithm.value =
+                savedAlgorithm.takeUnless { it.isEmpty() } ?: ShaAlgorithm.SHA256.algorithm
             initValues()
             initValuesToSet()
         }
-        _currentAlgorithm.value = SecurePreferencesHelper.getEnum(context)
     }
 
     private suspend fun initValues() {
         if (userId != null) {
-            val secure = repository.isUserSecure(userId)
+            val secure = FirestoreDataManager.getUserStatus()
             _isSecure.value = secure
-            val secretKey = otpManager.takeSecret()
+
+            val secretKey = suspendCoroutine<ByteArray> { continuation ->
+                otpManager.takeSecret { continuation.resume(it) }
+            }
+
             _secretKey.value = String(secretKey, Charsets.UTF_8)
         }
     }
 
+
     private suspend fun initValuesToSet() {
         _isSecure.collectLatest { secure ->
-            if (secure == 1) {
+            if (secure) {
                 collectToken()
 
-                val secret = otpManager.takeSecret()
+                val secret = suspendCoroutine { continuation ->
+                    otpManager.takeSecret { continuation.resume(it) }
+                }
                 val base32secret = Base32().encodeToString(secret).uppercase().replace("=", "")
-                val otpUri = otpManager.buildOtpUri(
-                    FirebaseAuth.getInstance().currentUser?.email.toString(),
-                    "MyNotes"
-                )
-                _securityState.value =
-                    SecurityState.LoadingData(String(secret, Charsets.UTF_8), base32secret, otpUri)
+
+                val otpUri = suspendCoroutine { continuation ->
+                    otpManager.buildOtpUri(
+                        FirebaseAuth.getInstance().currentUser?.email.toString(),
+                        "MyNotes"
+                    ) { uri ->
+                        continuation.resume(uri)
+                    }
+                }
+                if (String(secret, Charsets.UTF_8).isNotEmpty()){
+                    _securityState.value =
+                        SecurityState.LoadingData(String(secret, Charsets.UTF_8), base32secret, otpUri)
+                }
             }
         }
     }
@@ -89,39 +100,61 @@ class SecurityViewModel @Inject constructor(
         }
     }
 
-    fun getSecureStatus(): Int {
+    fun getSecureStatus(): Boolean {
         return isSecure.value
     }
 
     fun generateNewSecret() {
         _securityState.value = SecurityState.Loading
-        ShaAlgorithm.entries.find { it.algorithm == currentAlgorithm.value }
-            ?.let {
-                SecurePreferencesHelper.saveEnum(context, it)
-                otpManager.updateAlgorithm(it)
-            }
+
+        if (currentAlgorithm.value.isEmpty()) {
+            _currentAlgorithm.value = ShaAlgorithm.SHA256.algorithm
+        }
+
         viewModelScope.launch {
-            if (userId != null) {
-                repository.markUserAsSecure(userId)
+            ShaAlgorithm.entries.find { it.algorithm == currentAlgorithm.value }
+                ?.let {
+                    FirestoreDataManager.saveAlgorithm(it)
+                    otpManager.updateAlgorithm(it)
+                }
+
+            _isSecure.value = true
+            val readableSecret = otpManager.generateReadableSecret()
+            _secretKey.value = readableSecret
+            otpManager.updateSecret(readableSecret)
+
+            val base32Secret = Base32().encodeToString(readableSecret.toByteArray()).uppercase().replace("=", "")
+
+            val encryptedSecret = suspendCoroutine { continuation ->
+                FirestoreSecurityHelper.encryptData(base32Secret) { encrypted ->
+                    continuation.resume(encrypted)
+                }
+            }
+            if (encryptedSecret != null) {
+                FirestoreDataManager.saveSecret(encryptedSecret)
+                FirestoreDataManager.markUserStatus(true)
+
+                if (secretKey.value.isNotEmpty() && secretKey.value.isNotBlank()) {
+                    val otpUri = suspendCoroutine { continuation ->
+                        otpManager.buildOtpUri(
+                            FirebaseAuth.getInstance().currentUser?.email.toString(),
+                            "MyNotes"
+                        ) { uri ->
+                            continuation.resume(uri)
+                        }
+                    }
+                    _securityState.value = SecurityState.LoadingData(
+                        secretKey.value,
+                        base32Secret,
+                        otpUri
+                    )
+                } else {
+                    _securityState.value = SecurityState.Error("Failed to generate secret")
+                }
+            } else {
+                _securityState.value = SecurityState.Error("Encryption failed")
             }
         }
-        _isSecure.value = 1
-
-        val readableSecret = otpManager.generateReadableSecret()
-        _secretKey.value = readableSecret
-        otpManager.updateSecret(readableSecret)
-
-        val base32Secret =
-            Base32().encodeToString(readableSecret.toByteArray()).uppercase()
-                .replace("=", "")
-        val encryptedSecret = KeystoreHelper.encryptData(base32Secret).toHex()
-        SecurePreferencesHelper.saveSecret(context, encryptedSecret.hexToByteArray())
-
-        val otpUri = otpManager.buildOtpUri(
-            FirebaseAuth.getInstance().currentUser?.email.toString(),
-            "MyNotes"
-        )
-        _securityState.value = SecurityState.LoadingData(secretKey.value, base32Secret, otpUri)
     }
 
     fun setCustomSecret(userSecret: String) {
@@ -133,72 +166,68 @@ class SecurityViewModel @Inject constructor(
         }
 
         if (userSecret.length != requiredLength) {
-            _securityState.value =
-                SecurityState.Error("❗️The secret must contain exactly $requiredLength characters.")
+            _securityState.value = SecurityState.Error("❗️The secret must contain exactly $requiredLength characters.")
             return
         } else if (!userSecret.matches(Regex("^[A-Z2-7]+$"))) {
-            _securityState.value =
-                SecurityState.Error("❗️The secret must contain only the letters A-Z and the numbers 2-7.")
+            _securityState.value = SecurityState.Error("❗️The secret must contain only the letters A-Z and the numbers 2-7.")
             return
-        } else {
-            _securityState.value = SecurityState.Loading
+        }
+
+        _securityState.value = SecurityState.Loading
+
+        if (currentAlgorithm.value.isEmpty()) {
+            _currentAlgorithm.value = ShaAlgorithm.SHA256.algorithm
+        }
+
+        viewModelScope.launch {
             ShaAlgorithm.entries.find { it.algorithm == currentAlgorithm.value }
                 ?.let {
-                    SecurePreferencesHelper.saveEnum(context, it)
-                    otpManager.updateAlgorithm(it)
-                }
-
-            viewModelScope.launch {
-                userId?.let {
-                    repository.markUserAsSecure(it)
-                }
+                FirestoreDataManager.saveAlgorithm(it)
+                otpManager.updateAlgorithm(it)
             }
 
-            _isSecure.value = 1
+            _isSecure.value = true
             _secretKey.value = userSecret
             otpManager.updateSecret(userSecret)
 
-            val base32Secret =
-                Base32().encodeToString(userSecret.toByteArray()).uppercase().replace("=", "")
-            val encryptedSecret = KeystoreHelper.encryptData(base32Secret).toHex()
-            SecurePreferencesHelper.saveSecret(context, encryptedSecret.hexToByteArray())
+            val base32Secret = Base32().encodeToString(userSecret.toByteArray()).uppercase().replace("=", "")
 
-            val otpUri = otpManager.buildOtpUri(
-                FirebaseAuth.getInstance().currentUser?.email.toString(),
-                "MyNotes"
-            )
+            val encryptedSecret = suspendCoroutine { continuation ->
+                FirestoreSecurityHelper.encryptData(base32Secret) { encrypted ->
+                    continuation.resume(encrypted)
+                }
+            }
 
-            _securityState.value = SecurityState.LoadingData(secretKey.value, base32Secret, otpUri)
+            if (encryptedSecret != null) {
+                FirestoreDataManager.saveSecret(encryptedSecret)
+                FirestoreDataManager.markUserStatus(true)
+
+                val otpUri = suspendCoroutine{ continuation ->
+                    otpManager.buildOtpUri(
+                        FirebaseAuth.getInstance().currentUser?.email.toString(),
+                        "MyNotes"
+                    ) { uri ->
+                        continuation.resume(uri)
+                    }
+                }
+
+                _securityState.value = SecurityState.LoadingData(secretKey.value, base32Secret, otpUri)
+            } else {
+                _securityState.value = SecurityState.Error("❗️Failed to encrypt secret.")
+            }
         }
-    }
-
-
-    private fun ByteArray.toHex(): String {
-        return joinToString("") { "%02x".format(it) }
-    }
-
-    private fun String.hexToByteArray(): ByteArray {
-        val len = this.length
-        val result = ByteArray(len / 2)
-
-        for (i in 0 until len step 2) {
-            result[i / 2] = ((this[i].digitToInt(16) shl 4) + this[i + 1].digitToInt(16)).toByte()
-        }
-        return result
     }
 
     fun setSecureDisable() {
-        SecurePreferencesHelper.clearEnum(context)
+        viewModelScope.launch {
+            FirestoreDataManager.clearAlgorithm()
+            FirestoreDataManager.clearSecret()
+            FirestoreDataManager.markUserStatus(false)
+        }
         _currentAlgorithm.value = ""
-        SecurePreferencesHelper.clearSecret(context)
-        _isSecure.value = 0
+        _isSecure.value = false
         otpManager.clearAlgorithm()
         otpManager.updateSecret("")
-        viewModelScope.launch {
-            if (userId != null) {
-                repository.markUserAsNotSecure(userId)
-            }
-        }
     }
 
     fun clearState() {

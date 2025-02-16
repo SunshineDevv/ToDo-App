@@ -1,19 +1,17 @@
 package com.example.todoapp.ui.fragment.settings
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.biometric.BiometricPrompt
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.todoapp.R
 import com.example.todoapp.databinding.FragmentSettingsBinding
+import com.example.todoapp.ui.fragment.security.FirestoreDataManager
 import com.example.todoapp.ui.fragment.security.dialogs.CustomConfirmationDialog
 import com.example.todoapp.ui.fragment.settings.biometric.BiometricListener
 import com.example.todoapp.ui.fragment.settings.biometric.BiometricManager
@@ -24,8 +22,6 @@ import kotlinx.coroutines.launch
 class SettingsFragment : Fragment(), BiometricListener {
 
     private var binding: FragmentSettingsBinding? = null
-
-    private val settingsViewModel: SettingsViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -41,7 +37,7 @@ class SettingsFragment : Fragment(), BiometricListener {
 
         binding?.buttonSecurity?.setOnClickListener {
             lifecycleScope.launch {
-                if (settingsViewModel.getSecureStatus() == 1) {
+                if (FirestoreDataManager.getUserStatus()) {
                     biometricVerify()
                 } else {
                     findNavController().navigate(R.id.navigate_settingsFragment_to_securityFragment)

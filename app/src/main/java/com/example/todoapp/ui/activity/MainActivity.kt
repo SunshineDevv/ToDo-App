@@ -3,7 +3,6 @@ package com.example.todoapp.ui.activity
 import android.content.Intent
 import android.os.Bundle
 import android.view.MenuItem
-import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
@@ -18,6 +17,7 @@ import androidx.navigation.ui.setupWithNavController
 import com.example.todoapp.R
 import com.example.todoapp.databinding.ActivityMainBinding
 import com.example.todoapp.databinding.ItemHeaderNavBinding
+import com.example.todoapp.ui.fragment.security.FirestoreDataManager
 import com.example.todoapp.ui.fragment.security.SecurePreferencesHelper
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
@@ -55,6 +55,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 insets
             }
         }
+
+        FirestoreDataManager.startSessionListener(this)
     }
 
     private fun setupActionBar() {
@@ -155,6 +157,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     private fun setupLogOut(){
         binding?.navLogout?.setOnClickListener{
+            SecurePreferencesHelper.clearActiveSession(this)
             SecurePreferencesHelper.saveSuccess(this, "false")
             FirebaseAuth.getInstance().signOut()
             val intent = Intent(this, AuthActivity::class.java)
