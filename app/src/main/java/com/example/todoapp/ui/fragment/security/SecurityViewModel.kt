@@ -1,7 +1,6 @@
 package com.example.todoapp.ui.fragment.security
 
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.todoapp.database.repository.UserRepository
@@ -12,7 +11,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.apache.commons.codec.binary.Base32
 import javax.inject.Inject
@@ -43,10 +41,12 @@ class SecurityViewModel @Inject constructor(
 
     fun onStart() {
         viewModelScope.launch {
+            val savedAlgorithm = SecurePreferencesHelper.getEnum(context)
+            _currentAlgorithm.value =
+                savedAlgorithm.takeUnless { it.isEmpty() } ?: ShaAlgorithm.SHA256.algorithm
             initValues()
             initValuesToSet()
         }
-        _currentAlgorithm.value = SecurePreferencesHelper.getEnum(context)
     }
 
     private suspend fun initValues() {
@@ -95,6 +95,11 @@ class SecurityViewModel @Inject constructor(
 
     fun generateNewSecret() {
         _securityState.value = SecurityState.Loading
+
+        if (currentAlgorithm.value.isEmpty()) {
+            _currentAlgorithm.value = ShaAlgorithm.SHA256.algorithm
+        }
+
         ShaAlgorithm.entries.find { it.algorithm == currentAlgorithm.value }
             ?.let {
                 SecurePreferencesHelper.saveEnum(context, it)
@@ -142,6 +147,11 @@ class SecurityViewModel @Inject constructor(
             return
         } else {
             _securityState.value = SecurityState.Loading
+
+            if (currentAlgorithm.value.isEmpty()) {
+                _currentAlgorithm.value = ShaAlgorithm.SHA256.algorithm
+            }
+
             ShaAlgorithm.entries.find { it.algorithm == currentAlgorithm.value }
                 ?.let {
                     SecurePreferencesHelper.saveEnum(context, it)
