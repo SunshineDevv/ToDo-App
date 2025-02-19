@@ -47,6 +47,10 @@ package "ViewModel" {
         + логін користувача
     }
 
+    class TwoAuthViewModel {
+        + двофакторна автентифікація
+    }
+
     class SignUpViewModel {
         + реєстрація користувача
     }
@@ -132,5 +136,7 @@ NoteDao --> NoteDb
 SecurityViewModel --> KeystoreHelper
 SecurityViewModel --> SecurePreferencesHelper
 SecurityViewModel --> UnifiedOtpManager
+
+TwoAuthViewModel --> UnifiedOtpManager
 
 @enduml

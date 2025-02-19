@@ -79,7 +79,6 @@ package "com.example.todoapp.ui.fragment.auth" {
     LogInFragment --> LoginViewModel
     TwoAuthFragment --> TwoAuthViewModel
     SignUpFragment --> SignUpViewModel
-    TwoAuthViewModel --> SecurePreferencesHelper
 }
 
 ' ========== Пакет DAO (Работа с БД) ==========
