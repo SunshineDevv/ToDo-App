@@ -17,7 +17,7 @@ import androidx.navigation.ui.setupWithNavController
 import com.example.todoapp.R
 import com.example.todoapp.databinding.ActivityMainBinding
 import com.example.todoapp.databinding.ItemHeaderNavBinding
-import com.example.todoapp.ui.fragment.security.FirestoreDataManager
+import com.example.todoapp.database.repository.FirestoreDataManager
 import com.example.todoapp.ui.fragment.security.SecurePreferencesHelper
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth

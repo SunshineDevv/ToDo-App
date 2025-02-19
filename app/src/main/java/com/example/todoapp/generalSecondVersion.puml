@@ -1,0 +1,135 @@
+@startuml
+' ========== Головна структура застосунку (Вертикальне розташування) ==========
+
+' ---------- UI (Інтерфейс) ----------
+package "UI (Fragments)" {
+    class MainActivity {
+        + Відображає основний інтерфейс
+    }
+
+    class AuthActivity {
+        + Керує екранами входу та реєстрації
+    }
+
+    class NoteFragment {
+        + Відображає окрему нотатку
+    }
+
+    class ListFragment {
+        + Показує список нотаток
+    }
+
+    class UpdateNoteFragment {
+        + Редагування нотатки
+    }
+
+    class SecurityFragment {
+        + Налаштування безпеки
+    }
+
+    class TwoAuthFragment {
+        + Перевірка коду 2FA
+    }
+
+    class LoginFragment {
+        + Вхід користувача
+    }
+
+    class SignUpFragment {
+        + Реєстрація нового користувача
+    }
+}
+
+' ---------- ViewModel (Бізнес-логіка) ----------
+package "ViewModel" {
+    class LoginViewModel {
+        + Керує процесом автентифікації користувача
+    }
+
+    class TwoAuthViewModel {
+        + Керує процесом двофакторної автентифікації
+    }
+
+    class SignUpViewModel {
+        + Обробляє реєстрацію нового користувача
+    }
+
+    class NoteViewModel {
+        + Керує процесами створення, редагування та видалення нотаток
+    }
+
+    class SecurityViewModel {
+        + Керує безпекою (шифрування, 2FA)
+    }
+}
+
+' ---------- Репозиторії ----------
+package "Repository" {
+    class NoteRepository {
+        + Відповідає за збереження та отримання нотаток
+    }
+
+    class FirestoreDataManager {
+        + Керує збереженням 2FA-кодів та статусу безпеки у Firestore
+    }
+
+    class FirestoreSecurityHelper {
+        + Відповідає за шифрування та дешифрування даних у Firestore
+    }
+}
+
+' ---------- DAO (Локальне збереження нотаток) ----------
+package "DAO" {
+    interface NoteDao {
+        + Збереження нотаток у локальній БД
+    }
+}
+
+' ---------- Моделі ----------
+package "Models" {
+    class NoteDb {
+        + Локальна модель нотатки
+    }
+}
+
+' ---------- Безпека (Firestore) ----------
+package "Security" {
+    class SecurePreferencesHelper {
+        + Локальне збереження активного сеансу
+    }
+
+    class UnifiedOtpManager {
+        + Генерація та перевірка OTP-кодів
+    }
+}
+
+' ========== Взаємозв’язки (Вертикальне розташування) ==========
+
+MainActivity --> ListFragment
+MainActivity --> NoteFragment
+MainActivity --> UpdateNoteFragment
+MainActivity --> SecurityFragment
+
+LoginFragment --> TwoAuthFragment
+AuthActivity --> LoginFragment
+AuthActivity --> SignUpFragment
+
+LoginViewModel --> FirestoreDataManager
+NoteViewModel --> NoteRepository
+
+NoteRepository --> NoteDao
+
+NoteDao --> NoteDb
+
+SecurityViewModel --> FirestoreDataManager
+SecurityViewModel --> FirestoreSecurityHelper
+SecurityViewModel --> SecurePreferencesHelper
+SecurityViewModel --> UnifiedOtpManager
+
+SignUpViewModel --> FirestoreDataManager
+
+TwoAuthViewModel --> FirestoreDataManager
+TwoAuthViewModel --> UnifiedOtpManager
+
+
+@enduml

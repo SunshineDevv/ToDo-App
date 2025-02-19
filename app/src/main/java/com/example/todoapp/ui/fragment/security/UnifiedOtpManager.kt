@@ -2,6 +2,8 @@ package com.example.todoapp.ui.fragment.security
 
 import android.graphics.Bitmap
 import android.graphics.Color
+import com.example.todoapp.database.repository.FirestoreDataManager
+import com.example.todoapp.database.repository.FirestoreSecurityHelper
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import kotlinx.coroutines.CoroutineScope

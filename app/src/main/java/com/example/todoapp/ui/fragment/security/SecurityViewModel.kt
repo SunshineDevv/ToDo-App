@@ -2,6 +2,8 @@ package com.example.todoapp.ui.fragment.security
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.todoapp.database.repository.FirestoreDataManager
+import com.example.todoapp.database.repository.FirestoreSecurityHelper
 import com.example.todoapp.ui.fragment.security.securitystate.SecurityState
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel

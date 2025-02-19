@@ -1,4 +1,4 @@
-package com.example.todoapp.ui.fragment.security
+package com.example.todoapp.database.repository
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -9,6 +9,8 @@ import kotlinx.coroutines.tasks.await
 import org.apache.commons.codec.binary.Base32
 import android.util.Base64
 import com.example.todoapp.ui.activity.AuthActivity
+import com.example.todoapp.ui.fragment.security.SecurePreferencesHelper
+import com.example.todoapp.ui.fragment.security.ShaAlgorithm
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import java.util.UUID
@@ -27,7 +29,7 @@ object FirestoreDataManager {
         val userId = getUserId() ?: return
 
         val sessionId = UUID.randomUUID().toString()
-        SecurePreferencesHelper.saveActiveSession(context,sessionId)
+        SecurePreferencesHelper.saveActiveSession(context, sessionId)
         userId.let {
             firestore.collection("users")
                 .document(userId)

@@ -11,7 +11,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.todoapp.R
 import com.example.todoapp.databinding.FragmentSettingsBinding
-import com.example.todoapp.ui.fragment.security.FirestoreDataManager
+import com.example.todoapp.database.repository.FirestoreDataManager
 import com.example.todoapp.ui.fragment.security.dialogs.CustomConfirmationDialog
 import com.example.todoapp.ui.fragment.settings.biometric.BiometricListener
 import com.example.todoapp.ui.fragment.settings.biometric.BiometricManager

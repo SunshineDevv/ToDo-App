@@ -3,7 +3,7 @@ package com.example.todoapp.ui.fragment.auth.login
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import com.example.todoapp.ui.fragment.auth.AuthenticationState
-import com.example.todoapp.ui.fragment.security.FirestoreDataManager
+import com.example.todoapp.database.repository.FirestoreDataManager
 import com.example.todoapp.ui.fragment.security.SecurePreferencesHelper
 import com.example.todoapp.ui.fragment.security.UnifiedOtpManager
 import dagger.hilt.android.lifecycle.HiltViewModel

@@ -5,7 +5,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.todoapp.ui.fragment.auth.AuthenticationState
-import com.example.todoapp.ui.fragment.security.FirestoreDataManager
+import com.example.todoapp.database.repository.FirestoreDataManager
 import com.example.todoapp.ui.fragment.security.SecurePreferencesHelper
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth

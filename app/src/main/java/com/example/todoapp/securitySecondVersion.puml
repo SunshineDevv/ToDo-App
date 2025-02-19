@@ -1,0 +1,114 @@
+@startuml
+
+' ========== Пакет Безпеки ==========
+package "com.example.todoapp.ui.fragment.security" {
+    class SecurityFragment {
+        - securityViewModel: SecurityViewModel
+        + openGoogleAuthenticator()
+    }
+
+    class SecurityViewModel {
+        - otpManager: UnifiedOtpManager
+        - firestoreManager: FirestoreDataManager
+        - firestoreSecurityHelper: FirestoreSecurityHelper
+        - isSecure: MutableStateFlow<Boolean>
+        + generateNewSecret()
+        + setCustomSecret(userSecret: String)
+        + setSecureDisable()
+    }
+
+    class SecurePreferencesHelper {
+        + saveActiveSession(sessionId: String)
+        + getActiveSession(): String?
+        + clearActiveSession()
+    }
+
+    class UnifiedOtpManager {
+        + generateReadableSecret(): String
+        + validateToken(token: String, callback: (Boolean) -> Unit)
+        + generateQrCode(secret: String): Bitmap
+    }
+
+    SecurityFragment --> SecurityViewModel
+}
+
+' ========== Пакет Аутентифікації ==========
+package "com.example.todoapp.ui.fragment.auth" {
+    class LogInFragment {
+        - logInViewModel: LoginViewModel
+        + onViewCreated(view, savedInstanceState)
+    }
+
+    class SignUpFragment {
+        - signUpViewModel: SignUpViewModel
+        + onViewCreated(view, savedInstanceState)
+    }
+
+    class TwoAuthFragment {
+        - twoAuthViewModel: TwoAuthViewModel
+        + onViewCreated(view, savedInstanceState)
+    }
+
+    class LoginViewModel {
+        - firestoreManager: FirestoreDataManager
+        - securePrefsHelper: SecurePreferencesHelper
+        + logInUser(email: String, password: String)
+        + clearState()
+    }
+
+    class SignUpViewModel {
+        - firestoreManager: FirestoreDataManager
+        - securePrefsHelper: SecurePreferencesHelper
+        + registerNewUser(email: String, password: String, name: String, confirmPassword: String)
+        + clearState()
+    }
+
+    class TwoAuthViewModel {
+        - otpManager: UnifiedOtpManager
+        - firestoreManager: FirestoreDataManager
+        + validateUserInputCode(userInputCode: String)
+        + clearState()
+    }
+
+    LogInFragment --> LoginViewModel
+    SignUpFragment --> SignUpViewModel
+    TwoAuthFragment --> TwoAuthViewModel
+
+    LoginViewModel --> SecurePreferencesHelper
+    SignUpViewModel --> SecurePreferencesHelper
+    TwoAuthViewModel --> UnifiedOtpManager
+    TwoAuthViewModel --> SecurePreferencesHelper
+}
+
+' ========== Пакет Репозиторіїв ==========
+' Розташовуємо нижче за допомогою ..> зв'язків
+
+package "com.example.todoapp.database.repository" {
+    class FirestoreDataManager {
+        + saveSecret(secret: ByteArray)
+        + getSecret(): ByteArray?
+        + saveAlgorithm(enumValue: ShaAlgorithm)
+        + getAlgorithm(): String
+        + markUserStatus(isSecure: Boolean)
+        + getUserStatus(): Boolean
+        + saveSessionId(context: Context)
+        + startSessionListener(activity: Activity)
+    }
+
+    class FirestoreSecurityHelper {
+        + encryptData(plainText: String, callback: (ByteArray?) -> Unit)
+        + decryptData(encryptedData: ByteArray, callback: (String?) -> Unit)
+    }
+}
+
+' ========== Взаємозв’язки ==========
+
+SecurityViewModel --> FirestoreDataManager
+SecurityViewModel --> FirestoreSecurityHelper
+SecurityViewModel --> SecurePreferencesHelper
+SecurityViewModel --> UnifiedOtpManager
+SignUpViewModel --> FirestoreDataManager
+LoginViewModel --> FirestoreDataManager
+TwoAuthViewModel --> FirestoreDataManager
+
+@enduml
