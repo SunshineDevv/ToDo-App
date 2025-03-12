@@ -1,6 +1,5 @@
 package com.example.todoapp.ui.fragment.notelist
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.todoapp.database.model.NoteDb
@@ -48,14 +47,10 @@ class NoteListViewModel @Inject constructor(
             viewModelScope.launch {
                 try {
                     repository.syncNotes(userId)
-//                    _state.value = State.Success("All notes synced successfully!")
                 } catch (e: Exception) {
-//                    _state.value = State.Error("Sync failed: ${e.message}")
+                    e.printStackTrace()
                 }
             }
-        } else {
-            Log.e("SyncError", "User ID is null")
-//            _state.value = State.Error("User not logged in.")
         }
     }
 

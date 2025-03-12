@@ -1,6 +1,5 @@
 package com.example.todoapp.database.repository
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import com.example.todoapp.database.dao.NoteDao
 import com.example.todoapp.database.model.NoteDb
@@ -48,11 +47,11 @@ class NoteRepository @Inject constructor(
                         .await()
                     noteDao.markNoteAsSynced(note.id)
                 } catch (e: Exception) {
-                    Log.e("SyncError", "Failed to sync note: ${note.id}", e)
+                    e.printStackTrace()
                 }
             }
         } catch (e: Exception) {
-            Log.e("SyncError", "Error syncing local notes to Firestore", e)
+            e.printStackTrace()
         }
     }
 
@@ -110,7 +109,7 @@ class NoteRepository @Inject constructor(
                 }
             }
         } catch (e: Exception) {
-            Log.e("SyncError", "Error syncing Firestore notes to Room", e)
+            e.printStackTrace()
         }
     }
 

@@ -1,7 +1,6 @@
 package com.example.todoapp.ui.fragment.auth.singup
 
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.todoapp.ui.fragment.auth.AuthenticationState
@@ -41,7 +40,6 @@ class SignUpViewModel @Inject constructor(
             .isNotEmpty() && confirmPassword.trim().isNotEmpty()
             ) {
             if (password == confirmPassword){
-                Log.d("CheckPass", "$password and $confirmPassword")
                 auth.createUserWithEmailAndPassword(email, password)
                     .addOnCompleteListener { task ->
                         if (task.isSuccessful) {

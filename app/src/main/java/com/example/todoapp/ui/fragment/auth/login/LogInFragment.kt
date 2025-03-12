@@ -1,7 +1,6 @@
 package com.example.todoapp.ui.fragment.auth.login
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,7 +14,6 @@ import com.example.todoapp.R
 import com.example.todoapp.databinding.FragmentLogInBinding
 import com.example.todoapp.ui.activity.ActivityUIController
 import com.example.todoapp.ui.fragment.auth.AuthenticationState
-import com.example.todoapp.ui.fragment.security.SecurePreferencesHelper
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest

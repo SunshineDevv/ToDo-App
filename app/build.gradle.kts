@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.todoapp"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 34
         versionCode = 2
         versionName = "1.0.2"
@@ -35,9 +35,19 @@ android {
             }
         }
 
+        signingConfigs {
+            register("release") {
+                storeFile = File("-----")
+                storePassword = "koala"
+                keyAlias = "key0"
+                keyPassword = "koala"
+            }
+        }
+
         buildTypes {
             release {
-                isMinifyEnabled = false
+                isMinifyEnabled = true
+                signingConfig = signingConfigs.getByName("release")
                 proguardFiles(
                     getDefaultProguardFile("proguard-android-optimize.txt"),
                     "proguard-rules.pro"
