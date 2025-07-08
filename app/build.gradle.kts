@@ -37,10 +37,10 @@ android {
 
         signingConfigs {
             register("release") {
-                storeFile = File("-----")
-                storePassword = "koala"
-                keyAlias = "key0"
-                keyPassword = "koala"
+                storeFile = File("C:\\Users\\sasok\\Desktop\\AndroidProjects\\ToDoApp\\app\\keyStoreNew.jks")
+                storePassword = "qweqwe"
+                keyAlias = "upload"
+                keyPassword = "qweqwe"
             }
         }
 

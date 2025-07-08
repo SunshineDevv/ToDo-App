@@ -2,7 +2,7 @@
   "project_info": {
     "project_number": "1081300427943",
     "project_id": "todoapp-15158",
-    "storage_bucket": "todoapp-15158.appspot.com"
+    "storage_bucket": "todoapp-15158.firebasestorage.app"
   },
   "client": [
     {
@@ -12,7 +12,16 @@
           "package_name": "com.example.todoapp"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1081300427943-qi948mr377dkedbttca17t2sjm23sh5c.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.todoapp",
+            "certificate_hash": "daa7a22fc9be97c7f5d1e644e55e0e4302f7c811"
+          }
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAKO2qJBuM1KtmEyC_AwL6vrj4-LMS5X9w"

@@ -1,6 +1,7 @@
 package com.example.todoapp.ui.fragment.auth.login
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -89,6 +90,7 @@ class LogInFragment : Fragment() {
                                 .setAction("OK"){}
                                 .show()
                         }
+                        Log.i("MYlOGG", logInState.errorMsg)
                         activityUI.showProgressBar(false)
                         logInViewModel.clearState()
                     }
