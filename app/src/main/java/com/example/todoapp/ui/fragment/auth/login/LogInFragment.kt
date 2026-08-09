@@ -45,7 +45,7 @@ class LogInFragment : Fragment() {
 
         binding?.logInButton?.setOnClickListener {
             val email = binding?.emailEditText?.text.toString().trim()
-            val password = binding?.passwordEditText?.text.toString().trim()
+            val password = binding?.passwordEditText?.text.toString()
             logInViewModel.logInUser(email, password)
         }
 

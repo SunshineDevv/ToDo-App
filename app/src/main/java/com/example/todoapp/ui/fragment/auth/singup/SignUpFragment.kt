@@ -45,7 +45,7 @@ class SignUpFragment : Fragment() {
 
         binding?.signUpButton?.setOnClickListener {
             val email = binding?.emailEditText?.text.toString().trim()
-            val password = binding?.passwordEditText?.text.toString().trim()
+            val password = binding?.passwordEditText?.text.toString()
             val userName = binding?.nameEditText?.text.toString().trim()
             val confirmPassword = binding?.confirmPasswordEditText?.text.toString().trim()
 

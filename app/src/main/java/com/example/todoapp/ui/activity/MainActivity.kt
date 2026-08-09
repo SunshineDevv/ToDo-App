@@ -163,10 +163,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         binding?.navLogout?.setOnClickListener {
             lifecycleScope.launch {
                 logoutUseCase()
-
-                SecurePreferencesHelper.clearActiveSession(this@MainActivity)
-                SecurePreferencesHelper.saveSuccess(this@MainActivity, "false")
-
                 Log.i("BACKEND_LOGOUT", "user logged out from app")
 
                 val intent = Intent(this@MainActivity, AuthActivity::class.java).apply {

@@ -35,13 +35,12 @@ class SignUpViewModel @Inject constructor(
     ) {
         val trimmedName = name.trim()
         val trimmedEmail = email.trim()
-        val trimmedPassword = password.trim()
         val trimmedConfirmPassword = confirmPassword.trim()
 
         if (
             trimmedName.isEmpty() &&
             trimmedEmail.isEmpty() &&
-            trimmedPassword.isEmpty() &&
+            password.isEmpty() &&
             trimmedConfirmPassword.isEmpty()
         ) {
             _registrationState.value = AuthenticationState.Error("Credentials cannot be empty")
@@ -58,7 +57,7 @@ class SignUpViewModel @Inject constructor(
             return
         }
 
-        if (trimmedPassword.isEmpty()) {
+        if (password.isEmpty()) {
             _registrationState.value = AuthenticationState.Error("Password field cannot be empty")
             return
         }
@@ -68,7 +67,7 @@ class SignUpViewModel @Inject constructor(
             return
         }
 
-        if (trimmedPassword != trimmedConfirmPassword) {
+        if (password != trimmedConfirmPassword) {
             _registrationState.value = AuthenticationState.Error("Passwords do not match")
             return
         }
@@ -79,7 +78,7 @@ class SignUpViewModel @Inject constructor(
             try {
                 registerUseCase(
                     email = trimmedEmail,
-                    password = trimmedPassword
+                    password = password
                 )
 
                 Log.i("BACKEND_REGISTER", "registration completed")

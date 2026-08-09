@@ -26,9 +26,8 @@ class LoginViewModel @Inject constructor(
 
     fun logInUser(email: String, password: String) {
         val trimmedEmail = email.trim()
-        val trimmedPassword = password.trim()
 
-        if (trimmedEmail.isEmpty() && trimmedPassword.isEmpty()) {
+        if (trimmedEmail.isEmpty() && password.isEmpty()) {
             _logInState.value = AuthenticationState.Error("Credential fields cannot be empty")
             return
         }
@@ -38,7 +37,7 @@ class LoginViewModel @Inject constructor(
             return
         }
 
-        if (trimmedPassword.isEmpty()) {
+        if (password.isEmpty()) {
             _logInState.value = AuthenticationState.Error("Password field cannot be empty")
             return
         }
@@ -49,7 +48,7 @@ class LoginViewModel @Inject constructor(
             try {
                 loginUseCase(
                     email = trimmedEmail,
-                    password = trimmedPassword
+                    password = password
                 )
 
                 Log.i("BACKEND_AUTH", "login completed and tokens saved")
