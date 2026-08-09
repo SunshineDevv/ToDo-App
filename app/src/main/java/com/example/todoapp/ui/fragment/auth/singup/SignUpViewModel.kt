@@ -1,28 +1,22 @@
 package com.example.todoapp.ui.fragment.auth.singup
 
-import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.todoapp.ui.fragment.auth.AuthenticationState
-import com.example.todoapp.database.repository.FirestoreDataManager
-import com.example.todoapp.ui.fragment.security.SecurePreferencesHelper
-import com.google.firebase.Firebase
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.UserProfileChangeRequest
-import com.google.firebase.auth.auth
+import com.example.todoapp.usecase.auth.RegisterUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.io.IOException
 import javax.inject.Inject
 
 @HiltViewModel
 class SignUpViewModel @Inject constructor(
-    @ApplicationContext private val context: Context
+    private val registerUseCase: RegisterUseCase
 ) : ViewModel() {
-
-    private lateinit var auth: FirebaseAuth
 
     val userName = MutableStateFlow("")
     val userEmail = MutableStateFlow("")
@@ -33,58 +27,91 @@ class SignUpViewModel @Inject constructor(
         MutableStateFlow<AuthenticationState>(AuthenticationState.Empty)
     val registrationState = _registrationState.asStateFlow()
 
-    fun registerNewUser(email: String, password: String, name: String, confirmPassword: String) {
-        _registrationState.value = AuthenticationState.Loading
-        auth = Firebase.auth
-        if (name.trim().isNotEmpty() && email.trim().isNotEmpty() && password.trim()
-            .isNotEmpty() && confirmPassword.trim().isNotEmpty()
-            ) {
-            if (password == confirmPassword){
-                auth.createUserWithEmailAndPassword(email, password)
-                    .addOnCompleteListener { task ->
-                        if (task.isSuccessful) {
-                            val user = auth.currentUser
+    fun registerNewUser(
+        email: String,
+        password: String,
+        name: String,
+        confirmPassword: String
+    ) {
+        val trimmedName = name.trim()
+        val trimmedEmail = email.trim()
+        val trimmedPassword = password.trim()
+        val trimmedConfirmPassword = confirmPassword.trim()
 
-                            val profileUpdates = UserProfileChangeRequest.Builder()
-                                .setDisplayName(name)
-                                .build()
-
-                            user?.updateProfile(profileUpdates)?.addOnCompleteListener { updateTask ->
-                                if (updateTask.isSuccessful) {
-                                    viewModelScope.launch {
-                                        try {
-                                            SecurePreferencesHelper.saveSuccess(context, "")
-                                            FirestoreDataManager.saveSessionId(context)
-                                            _registrationState.value = AuthenticationState.Success
-                                        } catch (e: Exception) {
-                                            _registrationState.value =
-                                                AuthenticationState.Error("Database error: ${e.message}")
-                                        }
-                                    }
-                                } else {
-                                    _registrationState.value =
-                                        AuthenticationState.Error("Failed to update profile")
-                                }
-                            }
-                        } else {
-                            _registrationState.value =
-                                AuthenticationState.Error("Authentication failed: ${task.exception?.message}")
-                        }
-                    }
-            } else {
-                _registrationState.value =
-                    AuthenticationState.Error("Passwords do not match")
-            }
-        } else if (name.isBlank() && email.isBlank() && password.isBlank() && confirmPassword.isBlank()) {
+        if (
+            trimmedName.isEmpty() &&
+            trimmedEmail.isEmpty() &&
+            trimmedPassword.isEmpty() &&
+            trimmedConfirmPassword.isEmpty()
+        ) {
             _registrationState.value = AuthenticationState.Error("Credentials cannot be empty")
-        } else if (name.isBlank()) {
+            return
+        }
+
+        if (trimmedName.isEmpty()) {
             _registrationState.value = AuthenticationState.Error("Name field cannot be empty")
-        } else if (email.isBlank()) {
+            return
+        }
+
+        if (trimmedEmail.isEmpty()) {
             _registrationState.value = AuthenticationState.Error("Email field cannot be empty")
-        } else if (password.isBlank()) {
+            return
+        }
+
+        if (trimmedPassword.isEmpty()) {
             _registrationState.value = AuthenticationState.Error("Password field cannot be empty")
-        } else if (confirmPassword.isBlank()) {
+            return
+        }
+
+        if (trimmedConfirmPassword.isEmpty()) {
             _registrationState.value = AuthenticationState.Error("Confirming field cannot be empty")
+            return
+        }
+
+        if (trimmedPassword != trimmedConfirmPassword) {
+            _registrationState.value = AuthenticationState.Error("Passwords do not match")
+            return
+        }
+
+        _registrationState.value = AuthenticationState.Loading
+
+        viewModelScope.launch {
+            try {
+                registerUseCase(
+                    email = trimmedEmail,
+                    password = trimmedPassword
+                )
+
+                Log.i("BACKEND_REGISTER", "registration completed")
+
+                _registrationState.value = AuthenticationState.Success
+
+            } catch (e: HttpException) {
+                Log.e("BACKEND_REGISTER", "registration failed: HTTP ${e.code()}", e)
+                _registrationState.value = AuthenticationState.Error(mapHttpError(e))
+            } catch (e: IOException) {
+                Log.e("BACKEND_REGISTER", "registration failed: connection error", e)
+                _registrationState.value = AuthenticationState.Error(
+                    "Cannot connect to authentication server."
+                )
+            } catch (e: Exception) {
+                Log.e("BACKEND_REGISTER", "registration failed: ${e.message}", e)
+                _registrationState.value = AuthenticationState.Error(
+                    "Registration failed: ${e.message}"
+                )
+            }
+        }
+    }
+
+    private fun mapHttpError(e: HttpException): String {
+        return when (e.code()) {
+            400 -> "Invalid registration data."
+            401 -> "Registration is not authorized."
+            404 -> "Registration endpoint was not found."
+            409 -> "User with this email already exists."
+            429 -> "Too many registration attempts. Please wait and try again."
+            500 -> "Authentication server error."
+            else -> "Registration failed: HTTP ${e.code()}"
         }
     }
 

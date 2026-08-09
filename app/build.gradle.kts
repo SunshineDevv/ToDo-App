@@ -104,6 +104,11 @@ android {
 
         implementation (libs.gson)
 
+        implementation(libs.retrofit)
+        implementation(libs.retrofit.gson)
+        implementation(libs.okhttp)
+        implementation(libs.okhttp.logging)
+
         implementation(libs.androidx.core.splashscreen)
 
         implementation(libs.core)

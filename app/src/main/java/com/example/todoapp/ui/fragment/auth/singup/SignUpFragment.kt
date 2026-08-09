@@ -58,16 +58,21 @@ class SignUpFragment : Fragment() {
     }
 
     private fun initObservers() {
-        lifecycleScope.launch {
-            signUpViewModel.registrationState.flowWithLifecycle(lifecycle)
+        viewLifecycleOwner.lifecycleScope.launch {
+            signUpViewModel.registrationState
+                .flowWithLifecycle(viewLifecycleOwner.lifecycle)
                 .collectLatest { registrationState ->
                     val activityUI = requireActivity() as ActivityUIController
                     when (registrationState) {
                         is AuthenticationState.Success -> {
-                            findNavController().navigate(R.id.navigate_signUpFragment_to_mainActivity)
-                            requireActivity().finish()
                             activityUI.showProgressBar(false)
+                            Toast.makeText(
+                                requireContext(),
+                                "Account created. Please log in.",
+                                Toast.LENGTH_SHORT
+                            ).show()
                             signUpViewModel.clearState()
+                            findNavController().navigate(R.id.navigate_signUpFragment_to_logInFragment)
                         }
 
                         is AuthenticationState.Error -> {

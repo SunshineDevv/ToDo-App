@@ -6,26 +6,27 @@ import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.view.GravityCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
-import androidx.navigation.findNavController
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupWithNavController
 import com.example.todoapp.R
 import com.example.todoapp.databinding.ActivityAuthBinding
-import com.example.todoapp.ui.fragment.security.SecurePreferencesHelper
 import com.google.android.material.tabs.TabLayout
-import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
+import com.example.todoapp.usecase.auth.CheckAuthStateUseCase
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class AuthActivity : AppCompatActivity(), ActivityUIController {
 
     private var binding: ActivityAuthBinding? = null
+
+    @Inject
+    lateinit var checkAuthStateUseCase: CheckAuthStateUseCase
 
     private lateinit var navController: NavController
 
@@ -92,16 +93,14 @@ class AuthActivity : AppCompatActivity(), ActivityUIController {
 
     override fun onStart() {
         super.onStart()
-        val currentUser = FirebaseAuth.getInstance().currentUser
-        val success = SecurePreferencesHelper.getSuccess(this)
-        if (success == "true" || success == "") {
-            if (currentUser != null) {
-                val intent = Intent(this, MainActivity::class.java)
-                startActivity(intent)
-                finish()
-            }
-        }
 
+        if (checkAuthStateUseCase()) {
+            val intent = Intent(this, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+            startActivity(intent)
+            finish()
+        }
     }
 
     private fun changeVisualOfActivity() {

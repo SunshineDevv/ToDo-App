@@ -56,8 +56,10 @@ class LogInFragment : Fragment() {
     }
 
     private fun initObservers() {
-        lifecycleScope.launch {
-            logInViewModel.logInState.flowWithLifecycle(lifecycle).collectLatest { logInState ->
+        viewLifecycleOwner.lifecycleScope.launch {
+            logInViewModel.logInState
+                .flowWithLifecycle(viewLifecycleOwner.lifecycle)
+                .collectLatest { logInState ->
                 val activityUI = requireActivity() as ActivityUIController
                 when (logInState) {
                     is AuthenticationState.SuccessNewUser -> {
