@@ -7,7 +7,7 @@ class CheckAuthStateUseCase @Inject constructor(
     private val authRepository: AuthRepository
 ) {
 
-    operator fun invoke(): Boolean {
-        return authRepository.hasTokens()
+    suspend operator fun invoke(): Boolean {
+        return authRepository.restoreSession()
     }
 }

@@ -6,8 +6,10 @@ import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.fragment.NavHostFragment
@@ -15,9 +17,10 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupWithNavController
 import com.example.todoapp.R
 import com.example.todoapp.databinding.ActivityAuthBinding
+import com.example.todoapp.usecase.auth.CheckAuthStateUseCase
 import com.google.android.material.tabs.TabLayout
 import dagger.hilt.android.AndroidEntryPoint
-import com.example.todoapp.usecase.auth.CheckAuthStateUseCase
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -30,7 +33,15 @@ class AuthActivity : AppCompatActivity(), ActivityUIController {
 
     private lateinit var navController: NavController
 
+    private var isCheckingAuth = true
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
+
+        splashScreen.setKeepOnScreenCondition {
+            isCheckingAuth
+        }
+
         super.onCreate(savedInstanceState)
 
         binding = ActivityAuthBinding.inflate(layoutInflater)
@@ -48,6 +59,29 @@ class AuthActivity : AppCompatActivity(), ActivityUIController {
 
         setupTabLayout()
         changeVisualOfActivity()
+
+        checkInitialAuthState()
+    }
+
+    private fun checkInitialAuthState() {
+        lifecycleScope.launch {
+            val isAuthenticated = checkAuthStateUseCase()
+
+            if (isAuthenticated) {
+                openMainActivity()
+            } else {
+                isCheckingAuth = false
+            }
+        }
+    }
+
+    private fun openMainActivity() {
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+
+        startActivity(intent)
+        finish()
     }
 
     private fun setupTabLayout() {
@@ -87,19 +121,6 @@ class AuthActivity : AppCompatActivity(), ActivityUIController {
                 R.id.logInFragment -> binding?.tabLayout?.selectTab(binding?.tabLayout?.getTabAt(0))
                 R.id.signUpFragment -> binding?.tabLayout?.selectTab(binding?.tabLayout?.getTabAt(1))
             }
-        }
-    }
-
-
-    override fun onStart() {
-        super.onStart()
-
-        if (checkAuthStateUseCase()) {
-            val intent = Intent(this, MainActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            }
-            startActivity(intent)
-            finish()
         }
     }
 
@@ -208,6 +229,11 @@ class AuthActivity : AppCompatActivity(), ActivityUIController {
             binding?.progressIndicator?.visibility = View.GONE
             binding?.dimOverlay?.visibility = View.GONE
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        binding = null
     }
 }
 

@@ -20,7 +20,11 @@ class AuthRepository @Inject constructor(
     private val backendTokenStorage: BackendTokenStorage
 ) {
 
-    suspend fun register(email: String, password: String, name: String): RegisterResponse {
+    suspend fun register(
+        email: String,
+        password: String,
+        name: String
+    ): RegisterResponse {
         return api.register(
             RegisterRequest(
                 email = email,
@@ -52,6 +56,44 @@ class AuthRepository @Inject constructor(
         )
     }
 
+    suspend fun restoreSession(): Boolean {
+        val oldRefreshToken = backendTokenStorage.getRefreshToken()
+
+        if (oldRefreshToken.isNullOrBlank()) {
+            backendTokenStorage.clearTokens()
+            Log.i("BACKEND_SESSION", "refresh token is missing")
+            return false
+        }
+
+        return try {
+            val response = refresh(oldRefreshToken)
+
+            val newAccessToken = response.accessToken
+            val newRefreshToken = response.refreshToken
+
+            if (newAccessToken.isNullOrBlank() || newRefreshToken.isNullOrBlank()) {
+                backendTokenStorage.clearTokens()
+                Log.e("BACKEND_SESSION", "refresh response does not contain tokens")
+                return false
+            }
+
+            backendTokenStorage.saveTokens(
+                accessToken = newAccessToken,
+                refreshToken = newRefreshToken
+            )
+
+            Log.i("BACKEND_SESSION", "session restored successfully")
+            true
+
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            backendTokenStorage.clearTokens()
+            Log.e("BACKEND_SESSION", "session restore failed: ${e.message}", e)
+            false
+        }
+    }
+
     suspend fun getCurrentUser(): BackendUserResponse? {
         return api.getCurrentUser().user
     }
@@ -68,6 +110,10 @@ class AuthRepository @Inject constructor(
 
     fun hasTokens(): Boolean {
         return backendTokenStorage.hasTokens()
+    }
+
+    fun clearTokens() {
+        backendTokenStorage.clearTokens()
     }
 
     suspend fun logoutCurrentSession() {

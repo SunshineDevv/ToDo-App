@@ -53,6 +53,10 @@ class BackendTokenStorage @Inject constructor(
         return !accessToken.isNullOrBlank() && !refreshToken.isNullOrBlank()
     }
 
+    fun hasRefreshToken(): Boolean {
+        return !getRefreshToken().isNullOrBlank()
+    }
+
     fun clearTokens() {
         prefs.edit()
             .remove(KEY_ACCESS_TOKEN)
