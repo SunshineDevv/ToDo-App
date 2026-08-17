@@ -3,6 +3,7 @@ package com.example.todoapp.database.repository.auth
 import android.util.Log
 import com.example.todoapp.database.local.auth.BackendTokenStorage
 import com.example.todoapp.network.api.AuthBackendApi
+import com.example.todoapp.network.dto.BackendUserResponse
 import com.example.todoapp.network.dto.LoginRequest
 import com.example.todoapp.network.dto.LoginResponse
 import com.example.todoapp.network.dto.LogoutRequest
@@ -19,14 +20,12 @@ class AuthRepository @Inject constructor(
     private val backendTokenStorage: BackendTokenStorage
 ) {
 
-    suspend fun register(
-        email: String,
-        password: String
-    ): RegisterResponse {
+    suspend fun register(email: String, password: String, name: String): RegisterResponse {
         return api.register(
             RegisterRequest(
                 email = email,
-                password = password
+                password = password,
+                name = name
             )
         )
     }
@@ -51,6 +50,10 @@ class AuthRepository @Inject constructor(
                 refreshToken = refreshToken
             )
         )
+    }
+
+    suspend fun getCurrentUser(): BackendUserResponse? {
+        return api.getCurrentUser().user
     }
 
     fun saveTokens(

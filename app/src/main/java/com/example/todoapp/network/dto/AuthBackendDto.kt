@@ -6,7 +6,8 @@ data class HealthResponse(
 
 data class RegisterRequest(
     val email: String,
-    val password: String
+    val password: String,
+    val name: String? = null
 )
 
 data class LoginRequest(
@@ -23,8 +24,10 @@ data class LogoutRequest(
 )
 
 data class BackendUserResponse(
-    val id: String?,
-    val email: String?
+    val id: String? = null,
+    val email: String? = null,
+    val name: String? = null,
+    val mfaEnabled: Boolean = false
 )
 
 data class RegisterResponse(
@@ -37,4 +40,8 @@ data class LoginResponse(
     val refreshToken: String? = null,
     val loginTicket: String? = null,
     val user: BackendUserResponse? = null
+)
+
+data class CurrentUserResponse(
+    val user: BackendUserResponse?
 )

@@ -67,7 +67,7 @@ class SignUpViewModel @Inject constructor(
             return
         }
 
-        if (password != trimmedConfirmPassword) {
+        if (password != confirmPassword) {
             _registrationState.value = AuthenticationState.Error("Passwords do not match")
             return
         }
@@ -78,7 +78,8 @@ class SignUpViewModel @Inject constructor(
             try {
                 registerUseCase(
                     email = trimmedEmail,
-                    password = password
+                    password = password,
+                    name = trimmedName
                 )
 
                 Log.i("BACKEND_REGISTER", "registration completed")

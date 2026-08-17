@@ -1,5 +1,6 @@
 package com.example.todoapp.network.api
 
+import com.example.todoapp.network.dto.CurrentUserResponse
 import com.example.todoapp.network.dto.HealthResponse
 import com.example.todoapp.network.dto.LoginRequest
 import com.example.todoapp.network.dto.LoginResponse
@@ -27,4 +28,7 @@ interface AuthBackendApi {
 
     @POST("api/auth/logout")
     suspend fun logout(@Body request: LogoutRequest)
+
+    @GET("api/auth/me")
+    suspend fun getCurrentUser(): CurrentUserResponse
 }

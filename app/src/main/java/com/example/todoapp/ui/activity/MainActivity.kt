@@ -19,11 +19,14 @@ import androidx.navigation.ui.setupWithNavController
 import com.example.todoapp.R
 import com.example.todoapp.databinding.ActivityMainBinding
 import com.example.todoapp.databinding.ItemHeaderNavBinding
-import com.example.todoapp.ui.fragment.security.SecurePreferencesHelper
+import com.example.todoapp.usecase.GetCurrentUserUseCase
 import com.example.todoapp.usecase.auth.LogoutUseCase
 import com.google.android.material.navigation.NavigationView
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import java.io.IOException
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -32,6 +35,9 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
     @Inject
     lateinit var logoutUseCase: LogoutUseCase
+
+    @Inject
+    lateinit var getCurrentUserUseCase: GetCurrentUserUseCase
 
     private var binding: ActivityMainBinding? = null
 
@@ -151,12 +157,67 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     }
 
     private fun setupHeaderOfDrawer() {
-        val headerView = binding?.navigationView?.getHeaderView(0)
+        val headerView = binding?.navigationView?.getHeaderView(0) ?: return
+        val headerBinding = ItemHeaderNavBinding.bind(headerView)
 
-        val headerBinding = headerView?.let { ItemHeaderNavBinding.bind(it) }
+        headerBinding.userNameTextView.text = "Loading..."
+        headerBinding.userEmailTextView.text = ""
 
-//        headerBinding?.userNameTextView?.text = firebaseAuth.currentUser?.displayName
-//        headerBinding?.userEmailTextView?.text = firebaseAuth.currentUser?.email
+        lifecycleScope.launch {
+            try {
+                val user = getCurrentUserUseCase()
+
+                val name = user?.name.orEmpty()
+                val email = user?.email.orEmpty()
+
+                when {
+                    name.isNotBlank() && email.isNotBlank() -> {
+                        headerBinding.userNameTextView.text = name
+                        headerBinding.userEmailTextView.text = email
+                    }
+
+                    name.isNotBlank() -> {
+                        headerBinding.userNameTextView.text = name
+                        headerBinding.userEmailTextView.text = ""
+                    }
+
+                    email.isNotBlank() -> {
+                        headerBinding.userNameTextView.text = email
+                        headerBinding.userEmailTextView.text = ""
+                    }
+
+                    else -> {
+                        headerBinding.userNameTextView.text = "User"
+                        headerBinding.userEmailTextView.text = ""
+                    }
+                }
+
+                Log.i("BACKEND_PROFILE", "current user loaded")
+
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: HttpException) {
+                Log.e("BACKEND_PROFILE", "failed to load current user: HTTP ${e.code()}", e)
+
+                headerBinding.userNameTextView.text = "User"
+                headerBinding.userEmailTextView.text = ""
+
+                if (e.code() == 401 || e.code() == 403) {
+                    logoutUseCase()
+                    openAuthActivity()
+                }
+            } catch (e: IOException) {
+                Log.e("BACKEND_PROFILE", "failed to load current user: connection error", e)
+
+                headerBinding.userNameTextView.text = "User"
+                headerBinding.userEmailTextView.text = ""
+            } catch (e: Exception) {
+                Log.e("BACKEND_PROFILE", "failed to load current user: ${e.message}", e)
+
+                headerBinding.userNameTextView.text = "User"
+                headerBinding.userEmailTextView.text = ""
+            }
+        }
     }
 
     private fun setupLogOut() {
@@ -165,14 +226,18 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 logoutUseCase()
                 Log.i("BACKEND_LOGOUT", "user logged out from app")
 
-                val intent = Intent(this@MainActivity, AuthActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                }
-
-                startActivity(intent)
-                finish()
+                openAuthActivity()
             }
         }
+    }
+
+    private fun openAuthActivity() {
+        val intent = Intent(this@MainActivity, AuthActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+
+        startActivity(intent)
+        finish()
     }
 
     override fun onDestroy() {
@@ -186,7 +251,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         binding?.toolbar?.setNavigationOnClickListener {
             onBackPressedDispatcher.onBackPressed()
         }
-
     }
 
     override fun enableDrawer(enabled: Boolean) {
