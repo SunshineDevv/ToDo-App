@@ -58,5 +58,24 @@
         <action
             android:id="@+id/navigate_forgetPassFragment_to_logInFragment"
             app:destination="@id/logInFragment" />
+        <action
+            android:id="@+id/navigate_forgetPassFragment_to_resetPassFragment"
+            app:destination="@id/resetPassFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/resetPassFragment"
+        android:name="com.example.todoapp.ui.fragment.auth.recoverpass.ResetPassFragment"
+        android:label=""
+        tools:layout="@layout/fragment_reset_pass">
+
+        <argument
+            android:name="resetToken"
+            app:argType="string"
+            android:defaultValue="" />
+        <action
+            android:id="@+id/navigate_resetPassFragment_to_logInFragment"
+            app:destination="@id/logInFragment"
+            app:popUpTo="@id/logInFragment"
+            app:popUpToInclusive="false" />
     </fragment>
 </navigation>

@@ -129,7 +129,7 @@ class AuthActivity : AppCompatActivity(), ActivityUIController {
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
             when (destination.id) {
-                R.id.twoAuthFragment, R.id.forgetPassFragment -> {
+                R.id.twoAuthFragment, R.id.forgetPassFragment, R.id.resetPassFragment -> {
                     binding?.toolbar?.visibility = View.VISIBLE
                     toggleFullScreenMode(true)
                 }
@@ -204,6 +204,18 @@ class AuthActivity : AppCompatActivity(), ActivityUIController {
             R.id.forgetPassFragment -> {
                 supportActionBar?.apply {
                     title = "Recovering password"
+                    setDisplayHomeAsUpEnabled(true)
+                    setHomeButtonEnabled(true)
+                }
+
+                binding?.toolbar?.setNavigationOnClickListener {
+                    onBackPressedDispatcher.onBackPressed()
+                }
+            }
+
+            R.id.resetPassFragment -> {
+                supportActionBar?.apply {
+                    title = "Reset password"
                     setDisplayHomeAsUpEnabled(true)
                     setHomeButtonEnabled(true)
                 }

@@ -23,6 +23,24 @@ data class LogoutRequest(
     val refreshToken: String
 )
 
+data class ForgotPasswordRequest(
+    val email: String
+)
+
+data class ForgotPasswordResponse(
+    val message: String? = null,
+    val devResetToken: String? = null
+)
+
+data class ResetPasswordRequest(
+    val token: String,
+    val newPassword: String
+)
+
+data class ResetPasswordResponse(
+    val message: String? = null
+)
+
 data class BackendUserResponse(
     val id: String? = null,
     val email: String? = null,

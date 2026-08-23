@@ -1,7 +1,5 @@
 package com.example.todoapp.ui.fragment.auth
 
-import com.example.todoapp.ui.fragment.security.securitystate.SecurityState
-
 sealed class AuthenticationState {
     data object SuccessNewUser : AuthenticationState()
     data object Success : AuthenticationState()
@@ -12,5 +10,7 @@ sealed class AuthenticationState {
     data class FatalError(val errorMsg: String) : AuthenticationState()
     data class SuccessReset(val successMsg: String) : AuthenticationState()
     data class ErrorReset(val errorMsg: String) : AuthenticationState()
+    data class PasswordResetRequested(val message: String, val devResetToken: String?) : AuthenticationState()
+    data class PasswordResetCompleted(val message: String) : AuthenticationState()
     data object Loading : AuthenticationState()
 }

@@ -13,6 +13,10 @@ import com.example.todoapp.network.dto.RefreshRequest
 import com.example.todoapp.network.dto.RefreshResponse
 import com.example.todoapp.network.dto.RegisterRequest
 import com.example.todoapp.network.dto.RegisterResponse
+import com.example.todoapp.network.dto.ForgotPasswordRequest
+import com.example.todoapp.network.dto.ForgotPasswordResponse
+import com.example.todoapp.network.dto.ResetPasswordRequest
+import com.example.todoapp.network.dto.ResetPasswordResponse
 import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -46,6 +50,26 @@ class AuthRepository @Inject constructor(
             LoginRequest(
                 email = email,
                 password = password
+            )
+        )
+    }
+
+    suspend fun forgotPassword(
+        email: String
+    ): ForgotPasswordResponse {
+        return publicApi.forgotPassword(
+            ForgotPasswordRequest(email = email)
+        )
+    }
+
+    suspend fun resetPassword(
+        token: String,
+        newPassword: String
+    ): ResetPasswordResponse {
+        return publicApi.resetPassword(
+            ResetPasswordRequest(
+                token = token,
+                newPassword = newPassword
             )
         )
     }
