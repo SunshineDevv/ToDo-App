@@ -22,6 +22,8 @@ import com.google.android.material.tabs.TabLayout
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import android.widget.Toast
+import com.example.todoapp.session.RestoreSessionResult
 
 @AndroidEntryPoint
 class AuthActivity : AppCompatActivity(), ActivityUIController {
@@ -65,12 +67,34 @@ class AuthActivity : AppCompatActivity(), ActivityUIController {
 
     private fun checkInitialAuthState() {
         lifecycleScope.launch {
-            val isAuthenticated = checkAuthStateUseCase()
+            when (checkAuthStateUseCase()) {
+                RestoreSessionResult.Authenticated -> {
+                    openMainActivity()
+                }
 
-            if (isAuthenticated) {
-                openMainActivity()
-            } else {
-                isCheckingAuth = false
+                RestoreSessionResult.Unauthenticated -> {
+                    isCheckingAuth = false
+                }
+
+                RestoreSessionResult.NetworkUnavailable -> {
+                    isCheckingAuth = false
+
+                    Toast.makeText(
+                        this@AuthActivity,
+                        "No internet connection. Please try again later.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+
+                RestoreSessionResult.ServerUnavailable -> {
+                    isCheckingAuth = false
+
+                    Toast.makeText(
+                        this@AuthActivity,
+                        "Authentication server is temporarily unavailable.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
             }
         }
     }

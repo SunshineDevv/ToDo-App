@@ -1,28 +1,30 @@
 package com.example.todoapp.session
 
-import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
-sealed class AuthSessionEvent {
-    object SessionExpired : AuthSessionEvent()
+sealed interface AuthSessionState {
+    data object Authenticated : AuthSessionState
+    data object Unauthenticated : AuthSessionState
 }
 
 @Singleton
 class AuthSessionEventManager @Inject constructor() {
 
-    private val _events = MutableSharedFlow<AuthSessionEvent>(
-        replay = 0,
-        extraBufferCapacity = 1,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    private val _sessionState = MutableStateFlow<AuthSessionState>(
+        AuthSessionState.Authenticated
     )
 
-    val events: SharedFlow<AuthSessionEvent> = _events.asSharedFlow()
+    val sessionState: StateFlow<AuthSessionState> = _sessionState.asStateFlow()
+
+    fun markAuthenticated() {
+        _sessionState.value = AuthSessionState.Authenticated
+    }
 
     fun notifySessionExpired() {
-        _events.tryEmit(AuthSessionEvent.SessionExpired)
+        _sessionState.value = AuthSessionState.Unauthenticated
     }
 }

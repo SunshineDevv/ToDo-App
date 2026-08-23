@@ -28,7 +28,7 @@ class TokenAuthenticator @Inject constructor(
         response: Response
     ): Request? {
         if (responseCount(response) >= MAX_AUTH_RETRY_COUNT) {
-            expireLocalSession("authentication retry limit reached")
+            Log.e("BACKEND_TOKEN", "authentication retry limit reached")
             return null
         }
 
@@ -69,7 +69,7 @@ class TokenAuthenticator @Inject constructor(
                 val newRefreshToken = refreshResponse.refreshToken
 
                 if (newAccessToken.isNullOrBlank() || newRefreshToken.isNullOrBlank()) {
-                    expireLocalSession("refresh response does not contain tokens")
+                    Log.e("BACKEND_TOKEN", "refresh response does not contain tokens")
                     return null
                 }
 
@@ -77,6 +77,8 @@ class TokenAuthenticator @Inject constructor(
                     accessToken = newAccessToken,
                     refreshToken = newRefreshToken
                 )
+
+                authSessionEventManager.markAuthenticated()
 
                 Log.i("BACKEND_TOKEN", "tokens refreshed after 401")
 

@@ -31,7 +31,7 @@ import javax.inject.Inject
 import android.widget.Toast
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.repeatOnLifecycle
-import com.example.todoapp.session.AuthSessionEvent
+import com.example.todoapp.session.AuthSessionState
 import com.example.todoapp.session.AuthSessionEventManager
 
 @AndroidEntryPoint
@@ -61,11 +61,13 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         setupActionBar()
 
+        authSessionEventManager.markAuthenticated()
+
+        observeAuthSessionState()
+
         setupHeaderOfDrawer()
 
         setupLogOut()
-
-        observeAuthSessionEvents()
 
         binding?.navigationView?.setNavigationItemSelectedListener(this)
 
@@ -238,12 +240,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         }
     }
 
-    private fun observeAuthSessionEvents() {
+    private fun observeAuthSessionState() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                authSessionEventManager.events.collect { event ->
-                    when (event) {
-                        is AuthSessionEvent.SessionExpired -> {
+                authSessionEventManager.sessionState.collect { state ->
+                    when (state) {
+                        AuthSessionState.Authenticated -> {}
+
+                        AuthSessionState.Unauthenticated -> {
                             handleSessionExpired()
                         }
                     }
@@ -259,8 +263,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
         isSessionExpiredHandled = true
 
-        Log.i("BACKEND_SESSION", "session expired event received")
-
+        Log.i("BACKEND_SESSION", "unauthenticated session state received")
         Toast.makeText(
             this,
             "Session expired. Please log in again.",
