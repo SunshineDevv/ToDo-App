@@ -7,12 +7,12 @@
 
     <activity
         android:id="@+id/authActivity"
-        android:name="com.example.todoapp.ui.activity.AuthActivity"
+        android:name="com.example.todoapp.presentation.activity.AuthActivity"
         android:label="AuthActivity" />
 
     <fragment
         android:id="@+id/listFragment"
-        android:name="com.example.todoapp.ui.fragment.notelist.ListFragment"
+        android:name="com.example.todoapp.presentation.note.list.ListFragment"
         android:label="fragment_list"
         tools:layout="@layout/fragment_list" >
 
@@ -31,7 +31,7 @@
     </fragment>
     <fragment
         android:id="@+id/noteFragment"
-        android:name="com.example.todoapp.ui.fragment.note.NoteFragment"
+        android:name="com.example.todoapp.presentation.note.detail.NoteFragment"
         android:label="fragment_note"
         tools:layout="@layout/fragment_note" >
         <action
@@ -40,7 +40,7 @@
     </fragment>
     <fragment
         android:id="@+id/updateNoteFragment"
-        android:name="com.example.todoapp.ui.fragment.noteupdate.UpdateNoteFragment"
+        android:name="com.example.todoapp.presentation.note.update.UpdateNoteFragment"
         android:label="fragment_update_note"
         tools:layout="@layout/fragment_update_note" >
         <action
@@ -68,7 +68,7 @@
     </fragment>
     <fragment
         android:id="@+id/settingsFragment"
-        android:name="com.example.todoapp.ui.fragment.settings.SettingsFragment"
+        android:name="com.example.todoapp.presentation.settings.SettingsFragment"
         android:label="fragment_settings"
         tools:layout="@layout/fragment_settings" >
         <action
@@ -77,7 +77,7 @@
     </fragment>
     <fragment
         android:id="@+id/securityFragment"
-        android:name="com.example.todoapp.ui.fragment.security.SecurityFragment"
+        android:name="com.example.todoapp.presentation.security.SecurityFragment"
         android:label="fragment_security"
         tools:layout="@layout/fragment_security" />
 </navigation>

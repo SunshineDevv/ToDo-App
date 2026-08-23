@@ -6,7 +6,7 @@
     app:startDestination="@id/logInFragment">
     <fragment
         android:id="@+id/signUpFragment"
-        android:name="com.example.todoapp.ui.fragment.auth.singup.SignUpFragment"
+        android:name="com.example.todoapp.presentation.auth.signup.SignUpFragment"
         android:label=""
         tools:layout="@layout/fragment_sign_up" >
         <action
@@ -18,7 +18,7 @@
     </fragment>
     <fragment
         android:id="@+id/logInFragment"
-        android:name="com.example.todoapp.ui.fragment.auth.login.LogInFragment"
+        android:name="com.example.todoapp.presentation.auth.login.LogInFragment"
         android:label=""
         tools:layout="@layout/fragment_log_in" >
         <action
@@ -36,11 +36,11 @@
     </fragment>
     <activity
         android:id="@+id/mainActivity"
-        android:name="com.example.todoapp.ui.activity.MainActivity"
+        android:name="com.example.todoapp.presentation.activity.MainActivity"
         android:label="MainActivity" />
     <fragment
         android:id="@+id/twoAuthFragment"
-        android:name="com.example.todoapp.ui.fragment.auth.login.TwoAuthFragment"
+        android:name="com.example.todoapp.presentation.auth.login.TwoAuthFragment"
         android:label=""
         tools:layout="@layout/fragment_two_auth" >
         <action
@@ -52,7 +52,7 @@
     </fragment>
     <fragment
         android:id="@+id/forgetPassFragment"
-        android:name="com.example.todoapp.ui.fragment.auth.recoverpass.ForgetPassFragment"
+        android:name="com.example.todoapp.presentation.auth.recoverpass.ForgetPassFragment"
         android:label=""
         tools:layout="@layout/fragment_forget_pass" >
         <action
@@ -64,7 +64,7 @@
     </fragment>
     <fragment
         android:id="@+id/resetPassFragment"
-        android:name="com.example.todoapp.ui.fragment.auth.recoverpass.ResetPassFragment"
+        android:name="com.example.todoapp.presentation.auth.recoverpass.ResetPassFragment"
         android:label=""
         tools:layout="@layout/fragment_reset_pass">
 

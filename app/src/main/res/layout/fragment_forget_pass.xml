@@ -6,7 +6,7 @@
     <data>
         <variable
             name="viewmodel"
-            type="com.example.todoapp.ui.fragment.auth.recoverpass.ForgetPassViewModel" />
+            type="com.example.todoapp.presentation.auth.recoverpass.ForgetPassViewModel" />
     </data>
 
     <androidx.core.widget.NestedScrollView
@@ -28,7 +28,7 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            tools:context=".ui.fragment.auth.recoverpass.ForgetPassFragment">
+            tools:context=".presentation.auth.recoverpass.ForgetPassFragment">
 
             <TextView
                 android:id="@+id/textViewForgot"

@@ -2,9 +2,9 @@ package com.example.todoapp.di
 
 import android.content.Context
 import androidx.room.Room
-import com.example.todoapp.database.AppDatabase
-import com.example.todoapp.database.dao.NoteDao
-import com.example.todoapp.database.dao.UserDao
+import com.example.todoapp.data.local.database.AppDatabase
+import com.example.todoapp.data.local.database.dao.NoteDao
+import com.example.todoapp.data.local.database.dao.UserDao
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
 import dagger.Provides

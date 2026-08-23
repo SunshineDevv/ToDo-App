@@ -1,0 +1,14 @@
+package com.example.todoapp.presentation.note.detail
+
+import kotlinx.coroutines.flow.MutableStateFlow
+
+data class NoteModel(
+    val id: String,
+    val userOwnerId: String?,
+    val noteText: String?,
+    val noteName: String?,
+    val noteDateCreate: String?,
+    val noteDateUpdate: String?,
+    var isSelected: MutableStateFlow<Boolean> = MutableStateFlow(false),
+    var noteColor: String?
+)

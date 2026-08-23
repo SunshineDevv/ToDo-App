@@ -1,0 +1,108 @@
+package com.example.todoapp.presentation.auth.login
+
+import android.os.Bundle
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.databinding.DataBindingUtil
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.flowWithLifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
+import com.example.todoapp.R
+import com.example.todoapp.databinding.FragmentLogInBinding
+import com.example.todoapp.presentation.activity.ActivityUIController
+import com.example.todoapp.presentation.auth.state.AuthenticationState
+import com.google.android.material.snackbar.Snackbar
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+
+@AndroidEntryPoint
+class LogInFragment : Fragment() {
+
+    private var binding: FragmentLogInBinding? = null
+
+    private val logInViewModel: LoginViewModel by viewModels()
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        binding = DataBindingUtil.inflate(inflater, R.layout.fragment_log_in, container, false)
+        binding?.viewmodel = logInViewModel
+        binding?.lifecycleOwner = viewLifecycleOwner
+        return binding?.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        initObservers()
+
+        binding?.logInButton?.setOnClickListener {
+            val email = binding?.emailEditText?.text.toString().trim()
+            val password = binding?.passwordEditText?.text.toString()
+            logInViewModel.logInUser(email, password)
+        }
+
+        binding?.forgetPassTextView?.setOnClickListener {
+            findNavController().navigate(R.id.navigate_logInFragment_to_forgetPassFragment)
+        }
+
+    }
+
+    private fun initObservers() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            logInViewModel.logInState
+                .flowWithLifecycle(viewLifecycleOwner.lifecycle)
+                .collectLatest { logInState ->
+                val activityUI = requireActivity() as ActivityUIController
+                when (logInState) {
+                    is AuthenticationState.SuccessNewUser -> {
+                        findNavController().navigate(R.id.navigate_logInFragment_to_mainActivity)
+                        requireActivity().finish()
+                        activityUI.showProgressBar(false)
+                        logInViewModel.clearState()
+                    }
+
+                    is AuthenticationState.SuccessNoSecureEnable -> {
+                        findNavController().navigate(R.id.navigate_logInFragment_to_mainActivity)
+                        requireActivity().finish()
+                        activityUI.showProgressBar(false)
+                        logInViewModel.clearState()
+                    }
+
+                    is AuthenticationState.SuccessWithSecureEnable -> {
+                        findNavController().navigate(R.id.navigate_logInFragment_to_twoAuthFragment)
+                        activityUI.showProgressBar(false)
+                        logInViewModel.clearState()
+                    }
+
+                    is AuthenticationState.Loading -> {
+                        activityUI.showProgressBar(true)
+                    }
+
+                    is AuthenticationState.Error -> {
+                        view?.let {
+                            Snackbar.make(it, logInState.errorMsg, Snackbar.LENGTH_SHORT)
+                                .setAction("OK"){}
+                                .show()
+                        }
+                        Log.i("MYlOGG", logInState.errorMsg)
+                        activityUI.showProgressBar(false)
+                        logInViewModel.clearState()
+                    }
+
+                    else -> {
+                        activityUI.showProgressBar(false)
+                        logInViewModel.clearState()
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,9 +1,9 @@
 package com.example.todoapp.di
 
-import com.example.todoapp.network.BackendConfig
-import com.example.todoapp.network.api.AuthBackendApi
-import com.example.todoapp.network.interceptor.AuthInterceptor
-import com.example.todoapp.network.interceptor.TokenAuthenticator
+import com.example.todoapp.data.auth.remote.BackendConfig
+import com.example.todoapp.data.auth.remote.api.AuthBackendApi
+import com.example.todoapp.data.auth.remote.interceptor.AuthInterceptor
+import com.example.todoapp.data.auth.remote.interceptor.TokenAuthenticator
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import dagger.Module

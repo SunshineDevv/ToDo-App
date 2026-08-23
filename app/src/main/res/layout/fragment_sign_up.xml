@@ -7,7 +7,7 @@
 
         <variable
             name="viewmodel"
-            type="com.example.todoapp.ui.fragment.auth.singup.SignUpViewModel" />
+            type="com.example.todoapp.presentation.auth.signup.SignUpViewModel" />
     </data>
 
     <androidx.core.widget.NestedScrollView
@@ -29,7 +29,7 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            tools:context=".ui.fragment.auth.singup.SignUpFragment">
+            tools:context=".presentation.auth.signup.SignUpFragment">
 
             <LinearLayout
                 android:id="@+id/mainLinearLayout"

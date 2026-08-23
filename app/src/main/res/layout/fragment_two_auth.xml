@@ -6,7 +6,7 @@
     <data>
         <variable
             name="viewmodel"
-            type="com.example.todoapp.ui.fragment.auth.login.TwoAuthVIewModel" />
+            type="com.example.todoapp.presentation.auth.login.TwoAuthVIewModel" />
     </data>
 
     <androidx.core.widget.NestedScrollView
@@ -28,7 +28,7 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".ui.fragment.auth.login.TwoAuthFragment">
+        tools:context=".presentation.auth.login.TwoAuthFragment">
 
         <TextView
             android:id="@+id/textView2"
