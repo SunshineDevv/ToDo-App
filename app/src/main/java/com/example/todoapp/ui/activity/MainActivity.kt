@@ -28,6 +28,11 @@ import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
+import android.widget.Toast
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import com.example.todoapp.session.AuthSessionEvent
+import com.example.todoapp.session.AuthSessionEventManager
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelectedListener,
@@ -39,9 +44,14 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     @Inject
     lateinit var getCurrentUserUseCase: GetCurrentUserUseCase
 
+    @Inject
+    lateinit var authSessionEventManager: AuthSessionEventManager
+
     private var binding: ActivityMainBinding? = null
 
     private lateinit var drawerToggle: ActionBarDrawerToggle
+
+    private var isSessionExpiredHandled = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,6 +64,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         setupHeaderOfDrawer()
 
         setupLogOut()
+
+        observeAuthSessionEvents()
 
         binding?.navigationView?.setNavigationItemSelectedListener(this)
 
@@ -201,11 +213,6 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
 
                 headerBinding.userNameTextView.text = "User"
                 headerBinding.userEmailTextView.text = ""
-
-                if (e.code() == 401 || e.code() == 403) {
-                    logoutUseCase()
-                    openAuthActivity()
-                }
             } catch (e: IOException) {
                 Log.e("BACKEND_PROFILE", "failed to load current user: connection error", e)
 
@@ -229,6 +236,38 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 openAuthActivity()
             }
         }
+    }
+
+    private fun observeAuthSessionEvents() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                authSessionEventManager.events.collect { event ->
+                    when (event) {
+                        is AuthSessionEvent.SessionExpired -> {
+                            handleSessionExpired()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun handleSessionExpired() {
+        if (isSessionExpiredHandled) {
+            return
+        }
+
+        isSessionExpiredHandled = true
+
+        Log.i("BACKEND_SESSION", "session expired event received")
+
+        Toast.makeText(
+            this,
+            "Session expired. Please log in again.",
+            Toast.LENGTH_SHORT
+        ).show()
+
+        openAuthActivity()
     }
 
     private fun openAuthActivity() {

@@ -6,6 +6,7 @@ import com.example.todoapp.network.dto.LoginRequest
 import com.example.todoapp.network.dto.LoginResponse
 import com.example.todoapp.network.dto.LogoutRequest
 import com.example.todoapp.network.dto.RefreshRequest
+import com.example.todoapp.network.dto.RefreshResponse
 import com.example.todoapp.network.dto.RegisterRequest
 import com.example.todoapp.network.dto.RegisterResponse
 import retrofit2.http.Body
@@ -24,7 +25,7 @@ interface AuthBackendApi {
     suspend fun login(@Body request: LoginRequest): LoginResponse
 
     @POST("api/auth/refresh")
-    suspend fun refresh(@Body request: RefreshRequest): LoginResponse
+    suspend fun refresh(@Body request: RefreshRequest): RefreshResponse
 
     @POST("api/auth/logout")
     suspend fun logout(@Body request: LogoutRequest)

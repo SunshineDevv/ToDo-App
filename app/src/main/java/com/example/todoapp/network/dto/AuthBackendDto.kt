@@ -42,6 +42,11 @@ data class LoginResponse(
     val user: BackendUserResponse? = null
 )
 
+data class RefreshResponse(
+    val accessToken: String? = null,
+    val refreshToken: String? = null
+)
+
 data class CurrentUserResponse(
     val user: BackendUserResponse?
 )

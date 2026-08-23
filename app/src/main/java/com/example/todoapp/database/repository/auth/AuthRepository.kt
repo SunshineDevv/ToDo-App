@@ -2,12 +2,15 @@ package com.example.todoapp.database.repository.auth
 
 import android.util.Log
 import com.example.todoapp.database.local.auth.BackendTokenStorage
+import com.example.todoapp.di.AuthenticatedBackendApi
+import com.example.todoapp.di.PublicBackendApi
 import com.example.todoapp.network.api.AuthBackendApi
 import com.example.todoapp.network.dto.BackendUserResponse
 import com.example.todoapp.network.dto.LoginRequest
 import com.example.todoapp.network.dto.LoginResponse
 import com.example.todoapp.network.dto.LogoutRequest
 import com.example.todoapp.network.dto.RefreshRequest
+import com.example.todoapp.network.dto.RefreshResponse
 import com.example.todoapp.network.dto.RegisterRequest
 import com.example.todoapp.network.dto.RegisterResponse
 import kotlinx.coroutines.CancellationException
@@ -16,7 +19,8 @@ import javax.inject.Singleton
 
 @Singleton
 class AuthRepository @Inject constructor(
-    private val api: AuthBackendApi,
+    @PublicBackendApi private val publicApi: AuthBackendApi,
+    @AuthenticatedBackendApi private val authenticatedApi: AuthBackendApi,
     private val backendTokenStorage: BackendTokenStorage
 ) {
 
@@ -25,7 +29,7 @@ class AuthRepository @Inject constructor(
         password: String,
         name: String
     ): RegisterResponse {
-        return api.register(
+        return publicApi.register(
             RegisterRequest(
                 email = email,
                 password = password,
@@ -38,7 +42,7 @@ class AuthRepository @Inject constructor(
         email: String,
         password: String
     ): LoginResponse {
-        return api.login(
+        return publicApi.login(
             LoginRequest(
                 email = email,
                 password = password
@@ -48,8 +52,8 @@ class AuthRepository @Inject constructor(
 
     suspend fun refresh(
         refreshToken: String
-    ): LoginResponse {
-        return api.refresh(
+    ): RefreshResponse {
+        return publicApi.refresh(
             RefreshRequest(
                 refreshToken = refreshToken
             )
@@ -95,7 +99,7 @@ class AuthRepository @Inject constructor(
     }
 
     suspend fun getCurrentUser(): BackendUserResponse? {
-        return api.getCurrentUser().user
+        return authenticatedApi.getCurrentUser().user
     }
 
     fun saveTokens(
@@ -121,7 +125,7 @@ class AuthRepository @Inject constructor(
 
         try {
             if (!refreshToken.isNullOrBlank()) {
-                api.logout(
+                publicApi.logout(
                     LogoutRequest(refreshToken = refreshToken)
                 )
 
@@ -139,5 +143,5 @@ class AuthRepository @Inject constructor(
         }
     }
 
-    suspend fun checkHealth() = api.health()
+    suspend fun checkHealth() = publicApi.health()
 }
