@@ -7,7 +7,6 @@ import com.example.todoapp.domain.auth.model.ForgotPasswordResult
 import com.example.todoapp.domain.auth.model.LoginResult
 import com.example.todoapp.domain.auth.model.ResetPasswordResult
 import com.example.todoapp.domain.auth.model.RestoreSessionResult
-import com.example.todoapp.domain.auth.model.TokenPair
 
 interface AuthRepository {
 
@@ -31,19 +30,9 @@ interface AuthRepository {
         newPassword: String
     ): AppResult<ResetPasswordResult, AuthError>
 
-    suspend fun refresh(
-        refreshToken: String
-    ): AppResult<TokenPair, AuthError>
-
     suspend fun restoreSession(): RestoreSessionResult
 
     suspend fun getCurrentUser(): AppResult<AuthUser?, AuthError>
 
     suspend fun logoutCurrentSession(): AppResult<Unit, AuthError>
-
-    fun saveTokens(tokens: TokenPair)
-
-    fun hasTokens(): Boolean
-
-    fun clearTokens()
 }

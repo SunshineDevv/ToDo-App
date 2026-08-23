@@ -72,8 +72,12 @@ class AuthRepositoryImpl @Inject constructor(
             val loginResult = response.toDomain()
 
             if (loginResult == null) {
-                AppResult.Failure(AuthError.ServerUnavailable)
+                AppResult.Failure(AuthError.InvalidServerResponse)
             } else {
+                if (loginResult is LoginResult.Success) {
+                    saveTokens(loginResult.tokens)
+                }
+
                 AppResult.Success(loginResult)
             }
 
@@ -122,29 +126,6 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun refresh(
-        refreshToken: String
-    ): AppResult<TokenPair, AuthError> {
-        return try {
-            val response = publicApi.refresh(
-                RefreshRequest(refreshToken = refreshToken)
-            )
-
-            val tokenPair = response.toTokenPair()
-
-            if (tokenPair == null) {
-                AppResult.Failure(AuthError.ServerUnavailable)
-            } else {
-                AppResult.Success(tokenPair)
-            }
-
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            AppResult.Failure(AuthExceptionMapper.mapRefreshError(e))
-        }
-    }
-
     override suspend fun restoreSession(): RestoreSessionResult {
         val oldRefreshToken = backendTokenStorage.getRefreshToken()
 
@@ -154,7 +135,7 @@ class AuthRepositoryImpl @Inject constructor(
             return RestoreSessionResult.Unauthenticated
         }
 
-        return when (val result = refresh(oldRefreshToken)) {
+        return when (val result = refreshTokens(oldRefreshToken)) {
             is AppResult.Success -> {
                 saveTokens(result.data)
 
@@ -177,6 +158,11 @@ class AuthRepositoryImpl @Inject constructor(
 
                     AuthError.ServerUnavailable -> {
                         Log.e("BACKEND_SESSION", "authentication server unavailable")
+                        RestoreSessionResult.ServerUnavailable
+                    }
+
+                    AuthError.InvalidServerResponse -> {
+                        Log.e("BACKEND_SESSION", "refresh response is invalid")
                         RestoreSessionResult.ServerUnavailable
                     }
 
@@ -213,7 +199,10 @@ class AuthRepositoryImpl @Inject constructor(
 
                 Log.i("BACKEND_LOGOUT", "backend logout request completed")
             } else {
-                Log.i("BACKEND_LOGOUT", "refreshToken is empty, only local tokens will be cleared")
+                Log.i(
+                    "BACKEND_LOGOUT",
+                    "refreshToken is empty, only local tokens will be cleared"
+                )
             }
 
             AppResult.Success(Unit)
@@ -229,18 +218,33 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun saveTokens(tokens: TokenPair) {
+    private suspend fun refreshTokens(
+        refreshToken: String
+    ): AppResult<TokenPair, AuthError> {
+        return try {
+            val response = publicApi.refresh(
+                RefreshRequest(refreshToken = refreshToken)
+            )
+
+            val tokenPair = response.toTokenPair()
+
+            if (tokenPair == null) {
+                AppResult.Failure(AuthError.InvalidServerResponse)
+            } else {
+                AppResult.Success(tokenPair)
+            }
+
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppResult.Failure(AuthExceptionMapper.mapRefreshError(e))
+        }
+    }
+
+    private fun saveTokens(tokens: TokenPair) {
         backendTokenStorage.saveTokens(
             accessToken = tokens.accessToken,
             refreshToken = tokens.refreshToken
         )
-    }
-
-    override fun hasTokens(): Boolean {
-        return backendTokenStorage.hasTokens()
-    }
-
-    override fun clearTokens() {
-        backendTokenStorage.clearTokens()
     }
 }

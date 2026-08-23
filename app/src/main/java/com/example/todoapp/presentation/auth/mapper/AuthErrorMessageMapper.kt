@@ -15,7 +15,7 @@ object AuthErrorMessageMapper {
             AuthError.NetworkUnavailable -> "Cannot connect to authentication server."
             AuthError.ServerUnavailable -> "Authentication server is temporarily unavailable."
             AuthError.EndpointNotFound -> "Authentication endpoint was not found."
-            is AuthError.Unknown -> error.message ?: "Authentication request failed."
-        }
+            AuthError.InvalidServerResponse -> "Authentication server returned invalid response."
+            is AuthError.Unknown -> "Authentication request failed."        }
     }
 }

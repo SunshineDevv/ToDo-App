@@ -14,23 +14,9 @@ class LoginUseCase @Inject constructor(
         email: String,
         password: String
     ): AppResult<LoginResult, AuthError> {
-        val result = authRepository.login(
+        return authRepository.login(
             email = email,
             password = password
         )
-
-        if (result is AppResult.Success) {
-            when (val loginResult = result.data) {
-                is LoginResult.Success -> {
-                    authRepository.saveTokens(loginResult.tokens)
-                }
-
-                is LoginResult.MfaRequired -> {
-                    // Tokens are not issued yet. User must pass MFA first.
-                }
-            }
-        }
-
-        return result
     }
 }

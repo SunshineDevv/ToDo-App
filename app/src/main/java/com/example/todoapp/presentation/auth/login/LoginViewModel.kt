@@ -46,7 +46,7 @@ class LoginViewModel @Inject constructor(
                 password = password
             )) {
                 is AppResult.Success -> {
-                    when (val loginResult = result.data) {
+                    when (result.data) {
                         is LoginResult.Success -> {
                             Log.i("BACKEND_AUTH", "login completed and tokens saved")
                             _logInState.value = AuthenticationState.SuccessNoSecureEnable

@@ -10,6 +10,7 @@ sealed interface AuthError {
     data object NetworkUnavailable : AuthError
     data object ServerUnavailable : AuthError
     data object EndpointNotFound : AuthError
+    data object InvalidServerResponse : AuthError
 
     data class Unknown(
         val message: String? = null

@@ -67,34 +67,44 @@ class AuthActivity : AppCompatActivity(), ActivityUIController {
 
     private fun checkInitialAuthState() {
         lifecycleScope.launch {
-            when (checkAuthStateUseCase()) {
-                RestoreSessionResult.Authenticated -> {
-                    openMainActivity()
+            try {
+                when (checkAuthStateUseCase()) {
+                    RestoreSessionResult.Authenticated -> {
+                        openMainActivity()
+                    }
+
+                    RestoreSessionResult.Unauthenticated -> {
+                        isCheckingAuth = false
+                    }
+
+                    RestoreSessionResult.NetworkUnavailable -> {
+                        isCheckingAuth = false
+
+                        Toast.makeText(
+                            this@AuthActivity,
+                            "No internet connection. Please try again later.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+
+                    RestoreSessionResult.ServerUnavailable -> {
+                        isCheckingAuth = false
+
+                        Toast.makeText(
+                            this@AuthActivity,
+                            "Authentication server is temporarily unavailable.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
                 }
+            } catch (e: Exception) {
+                isCheckingAuth = false
 
-                RestoreSessionResult.Unauthenticated -> {
-                    isCheckingAuth = false
-                }
-
-                RestoreSessionResult.NetworkUnavailable -> {
-                    isCheckingAuth = false
-
-                    Toast.makeText(
-                        this@AuthActivity,
-                        "No internet connection. Please try again later.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-
-                RestoreSessionResult.ServerUnavailable -> {
-                    isCheckingAuth = false
-
-                    Toast.makeText(
-                        this@AuthActivity,
-                        "Authentication server is temporarily unavailable.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
+                Toast.makeText(
+                    this@AuthActivity,
+                    "Authentication check failed.",
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
     }
