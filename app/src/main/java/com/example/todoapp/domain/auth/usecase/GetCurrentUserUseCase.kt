@@ -10,7 +10,7 @@ class GetCurrentUserUseCase @Inject constructor(
     private val authRepository: AuthRepository
 ) {
 
-    suspend operator fun invoke(): AppResult<AuthUser?, AuthError> {
+    suspend operator fun invoke(): AppResult<AuthUser, AuthError> {
         return authRepository.getCurrentUser()
     }
 }

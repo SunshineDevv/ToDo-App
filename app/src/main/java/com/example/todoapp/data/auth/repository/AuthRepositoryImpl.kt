@@ -38,7 +38,7 @@ class AuthRepositoryImpl @Inject constructor(
         email: String,
         password: String,
         name: String
-    ): AppResult<AuthUser?, AuthError> {
+    ): AppResult<AuthUser, AuthError> {
         return try {
             val response = publicApi.register(
                 RegisterRequest(
@@ -48,7 +48,13 @@ class AuthRepositoryImpl @Inject constructor(
                 )
             )
 
-            AppResult.Success(response.user?.toDomain())
+            val user = response.user?.toDomain()
+
+            if (user == null) {
+                AppResult.Failure(AuthError.InvalidServerResponse)
+            } else {
+                AppResult.Success(user)
+            }
 
         } catch (e: CancellationException) {
             throw e
@@ -175,11 +181,17 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getCurrentUser(): AppResult<AuthUser?, AuthError> {
+    override suspend fun getCurrentUser(): AppResult<AuthUser, AuthError> {
         return try {
             val response = authenticatedApi.getCurrentUser()
 
-            AppResult.Success(response.user?.toDomain())
+            val user = response.user?.toDomain()
+
+            if (user == null) {
+                AppResult.Failure(AuthError.InvalidServerResponse)
+            } else {
+                AppResult.Success(user)
+            }
 
         } catch (e: CancellationException) {
             throw e

@@ -14,7 +14,7 @@ interface AuthRepository {
         email: String,
         password: String,
         name: String
-    ): AppResult<AuthUser?, AuthError>
+    ): AppResult<AuthUser, AuthError>
 
     suspend fun login(
         email: String,
@@ -32,7 +32,7 @@ interface AuthRepository {
 
     suspend fun restoreSession(): RestoreSessionResult
 
-    suspend fun getCurrentUser(): AppResult<AuthUser?, AuthError>
+    suspend fun getCurrentUser(): AppResult<AuthUser, AuthError>
 
     suspend fun logoutCurrentSession(): AppResult<Unit, AuthError>
 }

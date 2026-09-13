@@ -14,7 +14,7 @@ class RegisterUseCase @Inject constructor(
         email: String,
         password: String,
         name: String
-    ): AppResult<AuthUser?, AuthError> {
+    ): AppResult<AuthUser, AuthError> {
         return authRepository.register(
             email = email,
             password = password,

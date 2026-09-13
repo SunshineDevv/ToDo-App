@@ -14,6 +14,10 @@ android {
     namespace = "com.example.todoapp"
     compileSdk = 34
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         applicationId = "com.example.todoapp"
         minSdk = 26

@@ -47,8 +47,7 @@ class SignUpFragment : Fragment() {
             val email = binding?.emailEditText?.text.toString().trim()
             val password = binding?.passwordEditText?.text.toString()
             val userName = binding?.nameEditText?.text.toString().trim()
-            val confirmPassword = binding?.confirmPasswordEditText?.text.toString().trim()
-
+            val confirmPassword = binding?.confirmPasswordEditText?.text.toString()
             signUpViewModel.registerNewUser(email, password, userName, confirmPassword)
         }
 

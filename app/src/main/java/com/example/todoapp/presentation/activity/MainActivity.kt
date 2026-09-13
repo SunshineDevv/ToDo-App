@@ -180,8 +180,8 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 is AppResult.Success -> {
                     val user = result.data
 
-                    val name = user?.name.orEmpty()
-                    val email = user?.email.orEmpty()
+                    val name = user.name.orEmpty()
+                    val email = user.email
 
                     when {
                         name.isNotBlank() && email.isNotBlank() -> {

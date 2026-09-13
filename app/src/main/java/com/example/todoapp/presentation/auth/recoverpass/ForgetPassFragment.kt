@@ -12,6 +12,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import com.example.todoapp.BuildConfig
 import com.example.todoapp.R
 import com.example.todoapp.databinding.FragmentForgetPassBinding
 import com.example.todoapp.presentation.activity.ActivityUIController
@@ -32,9 +33,16 @@ class ForgetPassFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        binding = DataBindingUtil.inflate(inflater, R.layout.fragment_forget_pass, container, false)
+        binding = DataBindingUtil.inflate(
+            inflater,
+            R.layout.fragment_forget_pass,
+            container,
+            false
+        )
+
         binding?.viewmodel = forgetPassViewModel
         binding?.lifecycleOwner = viewLifecycleOwner
+
         return binding?.root
     }
 
@@ -42,7 +50,10 @@ class ForgetPassFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         initObservers()
+        setupClickListeners()
+    }
 
+    private fun setupClickListeners() {
         binding?.buttonSendCode?.setOnClickListener {
             val userEmail = binding?.editTextEmail?.text.toString().trim()
             forgetPassViewModel.resetPassword(userEmail)
@@ -76,7 +87,7 @@ class ForgetPassFragment : Fragment() {
 
                             val devResetToken = state.devResetToken
 
-                            if (!devResetToken.isNullOrBlank()) {
+                            if (BuildConfig.DEBUG && !devResetToken.isNullOrBlank()) {
                                 findNavController().navigate(
                                     R.id.navigate_forgetPassFragment_to_resetPassFragment,
                                     bundleOf(ARG_RESET_TOKEN to devResetToken)
@@ -100,6 +111,10 @@ class ForgetPassFragment : Fragment() {
                             ).show()
 
                             forgetPassViewModel.clearState()
+                        }
+
+                        is AuthenticationState.Empty -> {
+                            activityUI.showProgressBar(false)
                         }
 
                         else -> {
