@@ -220,13 +220,15 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun beginMfaSetup(
         password: String,
+        algorithm: String,
         currentCode: String?
     ): AppResult<MfaSetupData, AuthError> {
         return try {
             val response = authenticatedApi.beginMfaSetup(
                 MfaSetupBeginRequest(
                     password = password,
-                    currentCode = currentCode
+                    currentCode = currentCode,
+                    algorithm = algorithm
                 )
             )
 
@@ -237,7 +239,6 @@ class AuthRepositoryImpl @Inject constructor(
             } else {
                 AppResult.Success(setupData)
             }
-
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

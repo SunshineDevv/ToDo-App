@@ -27,10 +27,15 @@ class SecurityViewModel @Inject constructor(
     private val _securityState = MutableStateFlow<SecurityState>(SecurityState.Empty)
     val securityState = _securityState.asStateFlow()
 
-    private val _isMfaEnabled = MutableStateFlow(false)
+    private val _isMfaEnabled = MutableStateFlow<Boolean?>(null)
     val isMfaEnabled = _isMfaEnabled.asStateFlow()
 
+    private val _selectedAlgorithm = MutableStateFlow(DEFAULT_ALGORITHM)
+    val selectedAlgorithm = _selectedAlgorithm.asStateFlow()
+
     fun onStart() {
+        _isMfaEnabled.value = null
+
         viewModelScope.launch {
             when (val result = getCurrentUserUseCase()) {
                 is AppResult.Success -> {
@@ -38,7 +43,7 @@ class SecurityViewModel @Inject constructor(
                 }
 
                 is AppResult.Failure -> {
-                    Log.e("BACKEND_MFA", "failed to load MFA status: ${result.error}")
+                    Log.e("BACKEND_MFA", "Failed to load MFA status: ${result.error}")
                     _securityState.value = SecurityState.Error(
                         AuthErrorMessageMapper.toMessage(result.error)
                     )
@@ -47,12 +52,45 @@ class SecurityViewModel @Inject constructor(
         }
     }
 
-    fun beginMfaSetup(password: String) {
-        val rawPassword = password
+    fun setAlgorithm(algorithm: String) {
+        if (algorithm !in ALLOWED_ALGORITHMS) {
+            _securityState.value = SecurityState.Error("Unsupported MFA algorithm.")
+            return
+        }
 
-        if (rawPassword.isBlank()) {
+        _selectedAlgorithm.value = algorithm
+    }
+
+    fun beginMfaSetup(
+        password: String,
+        currentCode: String? = null
+    ) {
+        val mfaEnabled = _isMfaEnabled.value
+
+        if (mfaEnabled == null) {
+            _securityState.value = SecurityState.Error("MFA status is still loading.")
+            return
+        }
+
+        if (password.isBlank()) {
             _securityState.value = SecurityState.Error("Password cannot be empty.")
             return
+        }
+
+        val normalizedCurrentCode = currentCode
+            ?.trim()
+            ?.takeIf { it.isNotBlank() }
+
+        if (mfaEnabled) {
+            if (normalizedCurrentCode == null) {
+                _securityState.value = SecurityState.Error("Current MFA code cannot be empty.")
+                return
+            }
+
+            if (!MFA_CODE_REGEX.matches(normalizedCurrentCode)) {
+                _securityState.value = SecurityState.Error("Current MFA code must contain 6 digits.")
+                return
+            }
         }
 
         _securityState.value = SecurityState.Loading
@@ -60,7 +98,9 @@ class SecurityViewModel @Inject constructor(
         viewModelScope.launch {
             when (
                 val result = beginMfaSetupUseCase(
-                    password = rawPassword
+                    password = password,
+                    algorithm = _selectedAlgorithm.value,
+                    currentCode = if (mfaEnabled) normalizedCurrentCode else null
                 )
             ) {
                 is AppResult.Success -> {
@@ -69,6 +109,9 @@ class SecurityViewModel @Inject constructor(
                     _securityState.value = SecurityState.MfaSetupStarted(
                         otpUri = setupData.otpUri,
                         secretBase32 = setupData.secretBase32,
+                        algorithm = setupData.algorithm,
+                        digits = setupData.digits,
+                        periodSeconds = setupData.periodSeconds,
                         expiresAt = setupData.expiresAt
                     )
                 }
@@ -92,9 +135,7 @@ class SecurityViewModel @Inject constructor(
         }
 
         if (!MFA_CODE_REGEX.matches(trimmedCode)) {
-            _securityState.value = SecurityState.Error(
-                "Authentication code must contain 6 digits."
-            )
+            _securityState.value = SecurityState.Error("Authentication code must contain 6 digits.")
             return
         }
 
@@ -104,9 +145,7 @@ class SecurityViewModel @Inject constructor(
             when (val result = confirmMfaSetupUseCase(code = trimmedCode)) {
                 is AppResult.Success -> {
                     _isMfaEnabled.value = result.data.enabled
-                    _securityState.value = SecurityState.Success(
-                        "MFA enabled successfully."
-                    )
+                    _securityState.value = SecurityState.Success("MFA enabled successfully.")
                 }
 
                 is AppResult.Failure -> {
@@ -134,9 +173,7 @@ class SecurityViewModel @Inject constructor(
         }
 
         if (!MFA_CODE_REGEX.matches(trimmedCode)) {
-            _securityState.value = SecurityState.Error(
-                "Authentication code must contain 6 digits."
-            )
+            _securityState.value = SecurityState.Error("Authentication code must contain 6 digits.")
             return
         }
 
@@ -151,9 +188,7 @@ class SecurityViewModel @Inject constructor(
             ) {
                 is AppResult.Success -> {
                     _isMfaEnabled.value = result.data.enabled
-                    _securityState.value = SecurityState.Success(
-                        "MFA disabled successfully."
-                    )
+                    _securityState.value = SecurityState.Success("MFA disabled successfully.")
                 }
 
                 is AppResult.Failure -> {
@@ -171,6 +206,14 @@ class SecurityViewModel @Inject constructor(
     }
 
     private companion object {
+        const val DEFAULT_ALGORITHM = "SHA256"
+
+        val ALLOWED_ALGORITHMS = setOf(
+            "SHA1",
+            "SHA256",
+            "SHA512"
+        )
+
         val MFA_CODE_REGEX = Regex("^\\d{6}$")
     }
 }

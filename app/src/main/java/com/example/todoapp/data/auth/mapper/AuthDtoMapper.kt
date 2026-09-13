@@ -125,6 +125,9 @@ object AuthDtoMapper {
         return MfaSetupData(
             otpUri = uri,
             secretBase32 = secret,
+            algorithm = algorithm?.takeIf { it.isNotBlank() } ?: "SHA256",
+            digits = digits ?: 6,
+            periodSeconds = periodSeconds ?: 30,
             expiresAt = expiresAt
         )
     }

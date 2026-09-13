@@ -82,12 +82,16 @@ data class VerifyMfaLoginResponse(
 
 data class MfaSetupBeginRequest(
     val password: String,
-    val currentCode: String? = null
+    val currentCode: String? = null,
+    val algorithm: String = "SHA256"
 )
 
 data class MfaSetupBeginResponse(
     val otpUri: String? = null,
     val secretBase32: String? = null,
+    val algorithm: String? = null,
+    val digits: Int? = null,
+    val periodSeconds: Int? = null,
     val expiresAt: String? = null
 )
 

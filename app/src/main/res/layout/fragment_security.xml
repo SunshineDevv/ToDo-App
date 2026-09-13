@@ -78,6 +78,74 @@
                 android:textColorHint="@color/light_grey"
                 android:textSize="16sp" />
 
+            <TextView
+                android:id="@+id/algorithmTitleTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Algorithm"
+                android:textColor="@android:color/white"
+                android:textSize="14sp" />
+
+            <RadioGroup
+                android:id="@+id/algorithmRadioGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <androidx.appcompat.widget.AppCompatRadioButton
+                    android:id="@+id/sha1RadioButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:button="@null"
+                    android:drawableStart="@drawable/radio_button_selector"
+                    android:drawablePadding="4dp"
+                    android:paddingEnd="4dp"
+                    android:text="SHA1"
+                    android:textColor="@android:color/white" />
+
+                <androidx.appcompat.widget.AppCompatRadioButton
+                    android:id="@+id/sha256RadioButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:button="@null"
+                    android:drawableStart="@drawable/radio_button_selector"
+                    android:drawablePadding="4dp"
+                    android:paddingEnd="4dp"
+                    android:text="SHA256"
+                    android:textColor="@android:color/white" />
+
+                <androidx.appcompat.widget.AppCompatRadioButton
+                    android:id="@+id/sha512RadioButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="16dp"
+                    android:button="@null"
+                    android:drawableStart="@drawable/radio_button_selector"
+                    android:drawablePadding="4dp"
+                    android:paddingEnd="4dp"
+                    android:text="SHA512"
+                    android:textColor="@android:color/white" />
+
+            </RadioGroup>
+
+            <EditText
+                android:id="@+id/currentMfaCodeEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/rounded_edittext_background"
+                android:hint="Current MFA code"
+                android:inputType="number"
+                android:maxLength="6"
+                android:padding="10dp"
+                android:textColor="@android:color/white"
+                android:textColorHint="@color/light_grey"
+                android:textSize="16sp"
+                android:visibility="gone" />
+
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/beginMfaSetupButton"
                 android:layout_width="match_parent"
@@ -117,6 +185,24 @@
                     android:textIsSelectable="true"
                     android:textSize="16sp" />
 
+                <TextView
+                    android:id="@+id/setupParamsTextView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="@android:color/darker_gray"
+                    android:textSize="14sp" />
+
+                <Button
+                    android:id="@+id/copySecretButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/rounded_auth_button_background"
+                    android:padding="10dp"
+                    android:text="Copy secret"
+                    android:textColor="@android:color/black" />
+
                 <ImageView
                     android:id="@+id/qrCodeImageView"
                     android:layout_width="220dp"
@@ -135,6 +221,16 @@
                     android:textColor="@android:color/darker_gray"
                     android:textSize="14sp"
                     android:visibility="gone" />
+
+                <Button
+                    android:id="@+id/openAuthenticatorButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/rounded_auth_button_background"
+                    android:padding="10dp"
+                    android:text="Open authenticator app"
+                    android:textColor="@android:color/black" />
 
                 <EditText
                     android:id="@+id/setupCodeEditText"

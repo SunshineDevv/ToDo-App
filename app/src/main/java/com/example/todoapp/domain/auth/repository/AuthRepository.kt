@@ -30,6 +30,7 @@ interface AuthRepository {
 
     suspend fun beginMfaSetup(
         password: String,
+        algorithm: String = "SHA256",
         currentCode: String? = null
     ): AppResult<MfaSetupData, AuthError>
 

@@ -5,12 +5,14 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.os.bundleOf
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.navOptions
 import com.example.todoapp.R
 import com.example.todoapp.databinding.FragmentLogInBinding
 import com.example.todoapp.presentation.activity.ActivityUIController
@@ -18,7 +20,6 @@ import com.example.todoapp.presentation.auth.state.AuthenticationState
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
-import androidx.core.os.bundleOf
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -27,6 +28,8 @@ class LogInFragment : Fragment() {
     private var binding: FragmentLogInBinding? = null
 
     private val logInViewModel: LoginViewModel by viewModels()
+
+    private var isMfaNavigationInProgress = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -78,21 +81,18 @@ class LogInFragment : Fragment() {
                     }
 
                     is AuthenticationState.MfaRequired -> {
-                        activityUI.showProgressBar(false)
+                        if (isMfaNavigationInProgress) return@collectLatest
+
+                        isMfaNavigationInProgress = true
 
                         findNavController().navigate(
                             R.id.navigate_logInFragment_to_twoAuthFragment,
                             bundleOf(ARG_LOGIN_TICKET to logInState.loginTicket)
                         )
 
+                        activityUI.showProgressBar(false)
                         logInViewModel.clearState()
                     }
-
-//                    is AuthenticationState.SuccessWithSecureEnable -> {
-//                        findNavController().navigate(R.id.navigate_logInFragment_to_twoAuthFragment)
-//                        activityUI.showProgressBar(false)
-//                        logInViewModel.clearState()
-//                    }
 
                     is AuthenticationState.Loading -> {
                         activityUI.showProgressBar(true)
@@ -111,7 +111,6 @@ class LogInFragment : Fragment() {
 
                     else -> {
                         activityUI.showProgressBar(false)
-                        logInViewModel.clearState()
                     }
                 }
             }
@@ -120,5 +119,15 @@ class LogInFragment : Fragment() {
 
     private companion object {
         const val ARG_LOGIN_TICKET = "loginTicket"
+    }
+
+    override fun onResume() {
+        super.onResume()
+        isMfaNavigationInProgress = false
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
     }
 }
