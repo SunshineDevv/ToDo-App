@@ -7,6 +7,8 @@ import com.example.todoapp.domain.auth.model.ForgotPasswordResult
 import com.example.todoapp.domain.auth.model.LoginResult
 import com.example.todoapp.domain.auth.model.ResetPasswordResult
 import com.example.todoapp.domain.auth.model.RestoreSessionResult
+import com.example.todoapp.domain.auth.model.MfaSetupData
+import com.example.todoapp.domain.auth.model.MfaStatus
 
 interface AuthRepository {
 
@@ -20,6 +22,25 @@ interface AuthRepository {
         email: String,
         password: String
     ): AppResult<LoginResult, AuthError>
+
+    suspend fun verifyMfaLogin(
+        loginTicket: String,
+        code: String
+    ): AppResult<LoginResult.Success, AuthError>
+
+    suspend fun beginMfaSetup(
+        password: String,
+        currentCode: String? = null
+    ): AppResult<MfaSetupData, AuthError>
+
+    suspend fun confirmMfaSetup(
+        code: String
+    ): AppResult<MfaStatus, AuthError>
+
+    suspend fun disableMfa(
+        password: String,
+        code: String
+    ): AppResult<MfaStatus, AuthError>
 
     suspend fun forgotPassword(
         email: String

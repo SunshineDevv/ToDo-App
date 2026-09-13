@@ -8,141 +8,211 @@
     tools:context=".presentation.security.SecurityFragment">
 
     <ScrollView
-        android:id="@+id/scrollView2"
+        android:id="@+id/securityScrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0">
+        app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="8dp">
+            android:padding="16dp">
 
             <TextView
-                android:layout_width="wrap_content"
+                android:id="@+id/mfaTitleTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Multi-factor authentication"
+                android:textColor="@android:color/white"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/mfaDescriptionTextView"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:gravity="center"
-                android:paddingBottom="8dp"
-                android:text="The minimum requirement for a secret is 16 characters for correct operation"
+                android:text="Protect your account with a 6-digit code from an authenticator app."
                 android:textColor="@android:color/darker_gray"
                 android:textSize="14sp" />
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingTop="8dp"
-                android:text="Your own secret:"
-                android:textColor="@android:color/white"
-                android:textSize="14sp" />
-
-            <EditText
-                android:id="@+id/secretEditText"
+                android:id="@+id/mfaStatusTextView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="16dp"
+                android:text="MFA status: loading"
+                android:textColor="@android:color/white"
+                android:textSize="16sp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="20dp"
+                android:background="@android:color/darker_gray" />
+
+            <TextView
+                android:id="@+id/setupSectionTitleTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="Enable MFA"
+                android:textColor="@android:color/white"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/currentPasswordEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
                 android:background="@drawable/rounded_edittext_background"
-                android:hint="Secret1234"
-                android:inputType="text"
+                android:hint="Current password"
+                android:inputType="textPassword"
                 android:padding="10dp"
                 android:textColor="@android:color/white"
                 android:textColorHint="@color/light_grey"
                 android:textSize="16sp" />
 
-            <Button
-                android:id="@+id/setCustomSecretButton"
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/beginMfaSetupButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:background="@drawable/rounded_auth_button_background"
-                android:padding="10dp"
-                android:text="Set your own secret"
-                android:textColor="@android:color/black" />
-
-            <Button
-                android:id="@+id/generateSecretButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:background="@drawable/rounded_auth_button_background"
-                android:padding="10dp"
-                android:text="Generate a random secret"
-                android:textColor="@android:color/black" />
-
-            <TextView
-                android:id="@+id/base32TextView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:paddingTop="20dp"
-                android:text="Base32-encoded secret:"
-                android:textColor="@android:color/white"
-                android:textSize="14sp" />
-
-            <EditText
-                android:id="@+id/base32SecretEditText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/rounded_edittext_background"
-                android:inputType="none"
-                android:longClickable="true"
-                android:padding="10dp"
-                android:textColor="@android:color/white"
-                android:textIsSelectable="true"
-                android:textSize="16sp" />
-
-            <ImageView
-                android:id="@+id/qrCodeImageView"
-                android:layout_width="200dp"
-                android:layout_height="200dp"
-                android:layout_gravity="center"
                 android:layout_marginTop="16dp"
-                android:contentDescription="QR Code" />
+                android:background="@drawable/rounded_auth_button_background"
+                android:padding="10dp"
+                android:text="Start MFA setup"
+                android:textColor="@android:color/black" />
 
-            <TextView
-                android:id="@+id/clickQrCodeTextView"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:id="@+id/setupDataContainer"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="center"
-                android:paddingBottom="8dp"
-                android:text="Click on the QR code to add an account to Google Authenticator"
-                android:textColor="@android:color/darker_gray"
-                android:textSize="14sp"
-                android:visibility="gone" />
+                android:layout_marginTop="20dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/base32TextView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Base32 secret:"
+                    android:textColor="@android:color/white"
+                    android:textSize="14sp" />
+
+                <EditText
+                    android:id="@+id/base32SecretEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/rounded_edittext_background"
+                    android:inputType="none"
+                    android:longClickable="true"
+                    android:padding="10dp"
+                    android:textColor="@android:color/white"
+                    android:textIsSelectable="true"
+                    android:textSize="16sp" />
+
+                <ImageView
+                    android:id="@+id/qrCodeImageView"
+                    android:layout_width="220dp"
+                    android:layout_height="220dp"
+                    android:layout_gravity="center"
+                    android:layout_marginTop="16dp"
+                    android:contentDescription="MFA QR code" />
+
+                <TextView
+                    android:id="@+id/clickQrCodeTextView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:gravity="center"
+                    android:text="Tap QR code to open authenticator app"
+                    android:textColor="@android:color/darker_gray"
+                    android:textSize="14sp"
+                    android:visibility="gone" />
+
+                <EditText
+                    android:id="@+id/setupCodeEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/rounded_edittext_background"
+                    android:hint="6-digit code"
+                    android:inputType="number"
+                    android:maxLength="6"
+                    android:padding="10dp"
+                    android:textColor="@android:color/white"
+                    android:textColorHint="@color/light_grey"
+                    android:textSize="16sp" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/confirmMfaSetupButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/rounded_auth_button_background"
+                    android:padding="10dp"
+                    android:text="Confirm MFA"
+                    android:textColor="@android:color/black" />
+
+            </LinearLayout>
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="24dp"
                 android:background="@android:color/darker_gray" />
 
-            <EditText
-                android:id="@+id/codeEditText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/rounded_edittext_background"
-                android:clickable="false"
-                android:focusable="false"
-                android:padding="10dp"
-                android:textColor="@android:color/white"
-                android:textSize="16sp" />
-
-            <Button
-                android:id="@+id/disableTwoFactorButton"
+            <TextView
+                android:id="@+id/disableSectionTitleTextView"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
+                android:text="Disable MFA"
+                android:textColor="@android:color/white"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <EditText
+                android:id="@+id/disablePasswordEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/rounded_edittext_background"
+                android:hint="Current password"
+                android:inputType="textPassword"
+                android:padding="10dp"
+                android:textColor="@android:color/white"
+                android:textColorHint="@color/light_grey"
+                android:textSize="16sp" />
+
+            <EditText
+                android:id="@+id/disableCodeEditText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/rounded_edittext_background"
+                android:hint="6-digit code"
+                android:inputType="number"
+                android:maxLength="6"
+                android:padding="10dp"
+                android:textColor="@android:color/white"
+                android:textColorHint="@color/light_grey"
+                android:textSize="16sp" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/disableMfaButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
                 android:background="@drawable/rounded_auth_button_background"
                 android:padding="10dp"
-                android:text="Disable 2FA"
+                android:text="Disable MFA"
                 android:textColor="@android:color/black" />
 
         </LinearLayout>
@@ -153,27 +223,27 @@
         android:id="@+id/dimOverlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@android:color/black"
-        android:visibility="gone"
         android:alpha="0.6"
+        android:background="@android:color/black"
         android:clickable="true"
-        android:focusable="true"/>
+        android:focusable="true"
+        android:visibility="gone" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="@android:color/transparent"
         android:gravity="center"
-        android:orientation="horizontal"
-        android:background="@android:color/transparent">
+        android:orientation="horizontal">
 
         <ProgressBar
             android:id="@+id/progressIndicator"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:visibility="gone"
             android:indeterminate="true"
-            android:indeterminateTint="@color/yellow"/>
-    </LinearLayout>
+            android:indeterminateTint="@color/yellow"
+            android:visibility="gone" />
 
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

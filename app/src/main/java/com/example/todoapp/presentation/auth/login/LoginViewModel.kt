@@ -46,7 +46,7 @@ class LoginViewModel @Inject constructor(
                 password = password
             )) {
                 is AppResult.Success -> {
-                    when (result.data) {
+                    when (val loginResult = result.data) {
                         is LoginResult.Success -> {
                             Log.i("BACKEND_AUTH", "login completed and tokens saved")
                             _logInState.value = AuthenticationState.SuccessNoSecureEnable
@@ -54,8 +54,9 @@ class LoginViewModel @Inject constructor(
 
                         is LoginResult.MfaRequired -> {
                             Log.i("BACKEND_AUTH", "MFA is required")
-                            _logInState.value = AuthenticationState.Error(
-                                "MFA is required but Android MFA flow is not connected yet."
+
+                            _logInState.value = AuthenticationState.MfaRequired(
+                                loginTicket = loginResult.loginTicket
                             )
                         }
                     }

@@ -68,3 +68,38 @@ data class RefreshResponse(
 data class CurrentUserResponse(
     val user: BackendUserResponse?
 )
+
+data class VerifyMfaLoginRequest(
+    val loginTicket: String,
+    val code: String
+)
+
+data class VerifyMfaLoginResponse(
+    val accessToken: String? = null,
+    val refreshToken: String? = null,
+    val user: BackendUserResponse? = null
+)
+
+data class MfaSetupBeginRequest(
+    val password: String,
+    val currentCode: String? = null
+)
+
+data class MfaSetupBeginResponse(
+    val otpUri: String? = null,
+    val secretBase32: String? = null,
+    val expiresAt: String? = null
+)
+
+data class MfaSetupConfirmRequest(
+    val code: String
+)
+
+data class MfaDisableRequest(
+    val password: String,
+    val code: String
+)
+
+data class MfaStatusResponse(
+    val enabled: Boolean? = null
+)

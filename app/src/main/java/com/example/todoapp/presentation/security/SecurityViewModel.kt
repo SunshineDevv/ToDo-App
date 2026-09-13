@@ -1,240 +1,176 @@
 package com.example.todoapp.presentation.security
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.todoapp.data.legacy.firebase.FirestoreDataManager
-import com.example.todoapp.data.legacy.firebase.FirestoreSecurityHelper
-import com.example.todoapp.domain.security.model.ShaAlgorithm
-import com.example.todoapp.domain.security.service.UnifiedOtpManager
+import com.example.todoapp.core.result.AppResult
+import com.example.todoapp.domain.auth.usecase.BeginMfaSetupUseCase
+import com.example.todoapp.domain.auth.usecase.ConfirmMfaSetupUseCase
+import com.example.todoapp.domain.auth.usecase.DisableMfaUseCase
+import com.example.todoapp.domain.auth.usecase.GetCurrentUserUseCase
+import com.example.todoapp.presentation.auth.mapper.AuthErrorMessageMapper
 import com.example.todoapp.presentation.security.state.SecurityState
-import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import org.apache.commons.codec.binary.Base32
 import javax.inject.Inject
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 @HiltViewModel
 class SecurityViewModel @Inject constructor(
-    private val otpManager: UnifiedOtpManager
+    private val getCurrentUserUseCase: GetCurrentUserUseCase,
+    private val beginMfaSetupUseCase: BeginMfaSetupUseCase,
+    private val confirmMfaSetupUseCase: ConfirmMfaSetupUseCase,
+    private val disableMfaUseCase: DisableMfaUseCase
 ) : ViewModel() {
-
-    private val userId = FirebaseAuth.getInstance().currentUser?.uid
 
     private val _securityState = MutableStateFlow<SecurityState>(SecurityState.Empty)
     val securityState = _securityState.asStateFlow()
 
-    private val _secretKey = MutableStateFlow("")
-    val secretKey = _secretKey.asStateFlow()
-
-    private val _isSecure = MutableStateFlow(false)
-    val isSecure = _isSecure.asStateFlow()
-
-    private val _token = MutableStateFlow("")
-    val token = _token.asStateFlow()
-
-    private val _currentAlgorithm = MutableStateFlow(ShaAlgorithm.SHA256.algorithm)
-    val currentAlgorithm = _currentAlgorithm.asStateFlow()
+    private val _isMfaEnabled = MutableStateFlow(false)
+    val isMfaEnabled = _isMfaEnabled.asStateFlow()
 
     fun onStart() {
         viewModelScope.launch {
-            val savedAlgorithm = FirestoreDataManager.getAlgorithm()
-            _currentAlgorithm.value =
-                savedAlgorithm.takeUnless { it.isEmpty() } ?: ShaAlgorithm.SHA256.algorithm
-            initValues()
-            initValuesToSet()
-        }
-    }
-
-    private suspend fun initValues() {
-        if (userId != null) {
-            val secure = FirestoreDataManager.getUserStatus()
-            _isSecure.value = secure
-
-            val secretKey = suspendCoroutine<ByteArray> { continuation ->
-                otpManager.takeSecret { continuation.resume(it) }
-            }
-
-            _secretKey.value = String(secretKey, Charsets.UTF_8)
-        }
-    }
-
-
-    private suspend fun initValuesToSet() {
-        _isSecure.collectLatest { secure ->
-            if (secure) {
-                collectToken()
-
-                val secret = suspendCoroutine { continuation ->
-                    otpManager.takeSecret { continuation.resume(it) }
-                }
-                val base32secret = Base32().encodeToString(secret).uppercase().replace("=", "")
-
-                val otpUri = suspendCoroutine { continuation ->
-                    otpManager.buildOtpUri(
-                        FirebaseAuth.getInstance().currentUser?.email.toString(),
-                        "MyNotes"
-                    ) { uri ->
-                        continuation.resume(uri)
-                    }
-                }
-                if (String(secret, Charsets.UTF_8).isNotEmpty()){
-                    _securityState.value =
-                        SecurityState.LoadingData(String(secret, Charsets.UTF_8), base32secret, otpUri)
-                }
-            }
-        }
-    }
-
-    fun setAlgorithm(algorithm: ShaAlgorithm) {
-        _currentAlgorithm.value = algorithm.algorithm
-    }
-
-    private fun collectToken() {
-        viewModelScope.launch {
-            otpManager.tokenFlow().collect {
-                if (it != null) {
-                    _token.value = it
-                }
-            }
-        }
-    }
-
-    fun getSecureStatus(): Boolean {
-        return isSecure.value
-    }
-
-    fun generateNewSecret() {
-        _securityState.value = SecurityState.Loading
-
-        if (currentAlgorithm.value.isEmpty()) {
-            _currentAlgorithm.value = ShaAlgorithm.SHA256.algorithm
-        }
-
-        viewModelScope.launch {
-            ShaAlgorithm.entries.find { it.algorithm == currentAlgorithm.value }
-                ?.let {
-                    FirestoreDataManager.saveAlgorithm(it)
-                    otpManager.updateAlgorithm(it)
+            when (val result = getCurrentUserUseCase()) {
+                is AppResult.Success -> {
+                    _isMfaEnabled.value = result.data.mfaEnabled
                 }
 
-            _isSecure.value = true
-            val readableSecret = otpManager.generateReadableSecret()
-            _secretKey.value = readableSecret
-            otpManager.updateSecret(readableSecret)
-
-            val base32Secret = Base32().encodeToString(readableSecret.toByteArray()).uppercase().replace("=", "")
-
-            val encryptedSecret = suspendCoroutine { continuation ->
-                FirestoreSecurityHelper.encryptData(base32Secret) { encrypted ->
-                    continuation.resume(encrypted)
-                }
-            }
-            if (encryptedSecret != null) {
-                FirestoreDataManager.saveSecret(encryptedSecret)
-                FirestoreDataManager.markUserStatus(true)
-
-                if (secretKey.value.isNotEmpty() && secretKey.value.isNotBlank()) {
-                    val otpUri = suspendCoroutine { continuation ->
-                        otpManager.buildOtpUri(
-                            FirebaseAuth.getInstance().currentUser?.email.toString(),
-                            "MyNotes"
-                        ) { uri ->
-                            continuation.resume(uri)
-                        }
-                    }
-                    _securityState.value = SecurityState.LoadingData(
-                        secretKey.value,
-                        base32Secret,
-                        otpUri
+                is AppResult.Failure -> {
+                    Log.e("BACKEND_MFA", "failed to load MFA status: ${result.error}")
+                    _securityState.value = SecurityState.Error(
+                        AuthErrorMessageMapper.toMessage(result.error)
                     )
-                } else {
-                    _securityState.value = SecurityState.Error("Failed to generate secret")
                 }
-            } else {
-                _securityState.value = SecurityState.Error("Encryption failed")
             }
         }
     }
 
-    fun setCustomSecret(userSecret: String) {
-        val requiredLength = when (currentAlgorithm.value) {
-            ShaAlgorithm.SHA1.algorithm -> ShaAlgorithm.SHA1.sizeOfSecret
-            ShaAlgorithm.SHA256.algorithm -> ShaAlgorithm.SHA256.sizeOfSecret
-            ShaAlgorithm.SHA512.algorithm -> ShaAlgorithm.SHA512.sizeOfSecret
-            else -> ShaAlgorithm.SHA256.sizeOfSecret
-        }
+    fun beginMfaSetup(password: String) {
+        val rawPassword = password
 
-        if (userSecret.length != requiredLength) {
-            _securityState.value = SecurityState.Error("❗️The secret must contain exactly $requiredLength characters.")
-            return
-        } else if (!userSecret.matches(Regex("^[A-Z2-7]+$"))) {
-            _securityState.value = SecurityState.Error("❗️The secret must contain only the letters A-Z and the numbers 2-7.")
+        if (rawPassword.isBlank()) {
+            _securityState.value = SecurityState.Error("Password cannot be empty.")
             return
         }
 
         _securityState.value = SecurityState.Loading
 
-        if (currentAlgorithm.value.isEmpty()) {
-            _currentAlgorithm.value = ShaAlgorithm.SHA256.algorithm
-        }
-
         viewModelScope.launch {
-            ShaAlgorithm.entries.find { it.algorithm == currentAlgorithm.value }
-                ?.let {
-                FirestoreDataManager.saveAlgorithm(it)
-                otpManager.updateAlgorithm(it)
-            }
+            when (
+                val result = beginMfaSetupUseCase(
+                    password = rawPassword
+                )
+            ) {
+                is AppResult.Success -> {
+                    val setupData = result.data
 
-            _isSecure.value = true
-            _secretKey.value = userSecret
-            otpManager.updateSecret(userSecret)
-
-            val base32Secret = Base32().encodeToString(userSecret.toByteArray()).uppercase().replace("=", "")
-
-            val encryptedSecret = suspendCoroutine { continuation ->
-                FirestoreSecurityHelper.encryptData(base32Secret) { encrypted ->
-                    continuation.resume(encrypted)
-                }
-            }
-
-            if (encryptedSecret != null) {
-                FirestoreDataManager.saveSecret(encryptedSecret)
-                FirestoreDataManager.markUserStatus(true)
-
-                val otpUri = suspendCoroutine{ continuation ->
-                    otpManager.buildOtpUri(
-                        FirebaseAuth.getInstance().currentUser?.email.toString(),
-                        "MyNotes"
-                    ) { uri ->
-                        continuation.resume(uri)
-                    }
+                    _securityState.value = SecurityState.MfaSetupStarted(
+                        otpUri = setupData.otpUri,
+                        secretBase32 = setupData.secretBase32,
+                        expiresAt = setupData.expiresAt
+                    )
                 }
 
-                _securityState.value = SecurityState.LoadingData(secretKey.value, base32Secret, otpUri)
-            } else {
-                _securityState.value = SecurityState.Error("❗️Failed to encrypt secret.")
+                is AppResult.Failure -> {
+                    Log.e("BACKEND_MFA", "MFA setup begin failed: ${result.error}")
+                    _securityState.value = SecurityState.Error(
+                        AuthErrorMessageMapper.toMessage(result.error)
+                    )
+                }
             }
         }
     }
 
-    fun setSecureDisable() {
-        viewModelScope.launch {
-            FirestoreDataManager.clearAlgorithm()
-            FirestoreDataManager.clearSecret()
-            FirestoreDataManager.markUserStatus(false)
+    fun confirmMfaSetup(code: String) {
+        val trimmedCode = code.trim()
+
+        if (trimmedCode.isBlank()) {
+            _securityState.value = SecurityState.Error("Authentication code cannot be empty.")
+            return
         }
-        _currentAlgorithm.value = ""
-        _isSecure.value = false
-        otpManager.clearAlgorithm()
-        otpManager.updateSecret("")
+
+        if (!MFA_CODE_REGEX.matches(trimmedCode)) {
+            _securityState.value = SecurityState.Error(
+                "Authentication code must contain 6 digits."
+            )
+            return
+        }
+
+        _securityState.value = SecurityState.Loading
+
+        viewModelScope.launch {
+            when (val result = confirmMfaSetupUseCase(code = trimmedCode)) {
+                is AppResult.Success -> {
+                    _isMfaEnabled.value = result.data.enabled
+                    _securityState.value = SecurityState.Success(
+                        "MFA enabled successfully."
+                    )
+                }
+
+                is AppResult.Failure -> {
+                    Log.e("BACKEND_MFA", "MFA setup confirm failed: ${result.error}")
+                    _securityState.value = SecurityState.Error(
+                        AuthErrorMessageMapper.toMessage(result.error)
+                    )
+                }
+            }
+        }
+    }
+
+    fun disableMfa(password: String, code: String) {
+        val rawPassword = password
+        val trimmedCode = code.trim()
+
+        if (rawPassword.isBlank()) {
+            _securityState.value = SecurityState.Error("Password cannot be empty.")
+            return
+        }
+
+        if (trimmedCode.isBlank()) {
+            _securityState.value = SecurityState.Error("Authentication code cannot be empty.")
+            return
+        }
+
+        if (!MFA_CODE_REGEX.matches(trimmedCode)) {
+            _securityState.value = SecurityState.Error(
+                "Authentication code must contain 6 digits."
+            )
+            return
+        }
+
+        _securityState.value = SecurityState.Loading
+
+        viewModelScope.launch {
+            when (
+                val result = disableMfaUseCase(
+                    password = rawPassword,
+                    code = trimmedCode
+                )
+            ) {
+                is AppResult.Success -> {
+                    _isMfaEnabled.value = result.data.enabled
+                    _securityState.value = SecurityState.Success(
+                        "MFA disabled successfully."
+                    )
+                }
+
+                is AppResult.Failure -> {
+                    Log.e("BACKEND_MFA", "MFA disable failed: ${result.error}")
+                    _securityState.value = SecurityState.Error(
+                        AuthErrorMessageMapper.toMessage(result.error)
+                    )
+                }
+            }
+        }
     }
 
     fun clearState() {
         _securityState.value = SecurityState.Empty
+    }
+
+    private companion object {
+        val MFA_CODE_REGEX = Regex("^\\d{6}$")
     }
 }

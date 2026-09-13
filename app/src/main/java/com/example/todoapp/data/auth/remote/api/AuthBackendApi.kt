@@ -13,6 +13,13 @@ import com.example.todoapp.data.auth.remote.dto.RegisterRequest
 import com.example.todoapp.data.auth.remote.dto.RegisterResponse
 import com.example.todoapp.data.auth.remote.dto.ResetPasswordRequest
 import com.example.todoapp.data.auth.remote.dto.ResetPasswordResponse
+import com.example.todoapp.data.auth.remote.dto.VerifyMfaLoginRequest
+import com.example.todoapp.data.auth.remote.dto.VerifyMfaLoginResponse
+import com.example.todoapp.data.auth.remote.dto.MfaDisableRequest
+import com.example.todoapp.data.auth.remote.dto.MfaSetupBeginRequest
+import com.example.todoapp.data.auth.remote.dto.MfaSetupBeginResponse
+import com.example.todoapp.data.auth.remote.dto.MfaSetupConfirmRequest
+import com.example.todoapp.data.auth.remote.dto.MfaStatusResponse
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -39,6 +46,18 @@ interface AuthBackendApi {
 
     @POST("api/auth/password/reset")
     suspend fun resetPassword(@Body request: ResetPasswordRequest): ResetPasswordResponse
+
+    @POST("api/auth/mfa/verify")
+    suspend fun verifyMfaLogin(@Body request: VerifyMfaLoginRequest): VerifyMfaLoginResponse
+
+    @POST("api/mfa/setup/begin")
+    suspend fun beginMfaSetup(@Body request: MfaSetupBeginRequest): MfaSetupBeginResponse
+
+    @POST("api/mfa/setup/confirm")
+    suspend fun confirmMfaSetup(@Body request: MfaSetupConfirmRequest): MfaStatusResponse
+
+    @POST("api/mfa/disable")
+    suspend fun disableMfa(@Body request: MfaDisableRequest): MfaStatusResponse
 
     @GET("api/auth/me")
     suspend fun getCurrentUser(): CurrentUserResponse

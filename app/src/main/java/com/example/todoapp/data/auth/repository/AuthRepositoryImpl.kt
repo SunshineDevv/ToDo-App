@@ -23,6 +23,12 @@ import com.example.todoapp.domain.auth.model.ResetPasswordResult
 import com.example.todoapp.domain.auth.model.RestoreSessionResult
 import com.example.todoapp.domain.auth.model.TokenPair
 import com.example.todoapp.domain.auth.repository.AuthRepository
+import com.example.todoapp.data.auth.remote.dto.VerifyMfaLoginRequest
+import com.example.todoapp.data.auth.remote.dto.MfaDisableRequest
+import com.example.todoapp.data.auth.remote.dto.MfaSetupBeginRequest
+import com.example.todoapp.data.auth.remote.dto.MfaSetupConfirmRequest
+import com.example.todoapp.domain.auth.model.MfaSetupData
+import com.example.todoapp.domain.auth.model.MfaStatus
 import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -178,6 +184,114 @@ class AuthRepositoryImpl @Inject constructor(
                     }
                 }
             }
+        }
+    }
+
+    override suspend fun verifyMfaLogin(
+        loginTicket: String,
+        code: String
+    ): AppResult<LoginResult.Success, AuthError> {
+        return try {
+            val response = publicApi.verifyMfaLogin(
+                VerifyMfaLoginRequest(
+                    loginTicket = loginTicket,
+                    code = code
+                )
+            )
+
+            val loginResult = response.toDomain()
+
+            if (loginResult == null) {
+                AppResult.Failure(AuthError.InvalidServerResponse)
+            } else {
+                saveTokens(loginResult.tokens)
+
+                Log.i("BACKEND_MFA", "MFA login completed and tokens saved")
+
+                AppResult.Success(loginResult)
+            }
+
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppResult.Failure(AuthExceptionMapper.mapMfaLoginError(e))
+        }
+    }
+
+    override suspend fun beginMfaSetup(
+        password: String,
+        currentCode: String?
+    ): AppResult<MfaSetupData, AuthError> {
+        return try {
+            val response = authenticatedApi.beginMfaSetup(
+                MfaSetupBeginRequest(
+                    password = password,
+                    currentCode = currentCode
+                )
+            )
+
+            val setupData = response.toDomain()
+
+            if (setupData == null) {
+                AppResult.Failure(AuthError.InvalidServerResponse)
+            } else {
+                AppResult.Success(setupData)
+            }
+
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppResult.Failure(AuthExceptionMapper.mapMfaSetupError(e))
+        }
+    }
+
+    override suspend fun confirmMfaSetup(
+        code: String
+    ): AppResult<MfaStatus, AuthError> {
+        return try {
+            val response = authenticatedApi.confirmMfaSetup(
+                MfaSetupConfirmRequest(code = code)
+            )
+
+            val status = response.toDomain()
+
+            if (status == null) {
+                AppResult.Failure(AuthError.InvalidServerResponse)
+            } else {
+                AppResult.Success(status)
+            }
+
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppResult.Failure(AuthExceptionMapper.mapMfaConfirmError(e))
+        }
+    }
+
+    override suspend fun disableMfa(
+        password: String,
+        code: String
+    ): AppResult<MfaStatus, AuthError> {
+        return try {
+            val response = authenticatedApi.disableMfa(
+                MfaDisableRequest(
+                    password = password,
+                    code = code
+                )
+            )
+
+            val status = response.toDomain()
+
+            if (status == null) {
+                AppResult.Failure(AuthError.InvalidServerResponse)
+            } else {
+                AppResult.Success(status)
+            }
+
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            AppResult.Failure(AuthExceptionMapper.mapMfaDisableError(e))
         }
     }
 

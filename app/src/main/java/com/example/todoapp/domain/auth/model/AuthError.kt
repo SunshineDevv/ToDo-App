@@ -12,6 +12,12 @@ sealed interface AuthError {
     data object EndpointNotFound : AuthError
     data object InvalidServerResponse : AuthError
 
+    data object InvalidPassword : AuthError
+    data object InvalidMfaCode : AuthError
+    data object InvalidMfaChallenge : AuthError
+    data object MfaSetupExpired : AuthError
+    data object MfaNotConfigured : AuthError
+
     data class Unknown(
         val message: String? = null
     ) : AuthError

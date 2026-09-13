@@ -122,4 +122,80 @@ object AuthExceptionMapper {
             else -> AuthError.Unknown(throwable.message)
         }
     }
+
+    fun mapMfaLoginError(throwable: Throwable): AuthError {
+        return when (throwable) {
+            is IOException -> AuthError.NetworkUnavailable
+
+            is HttpException -> {
+                when (throwable.code()) {
+                    400 -> AuthError.InvalidMfaCode
+                    401, 403 -> AuthError.InvalidMfaChallenge
+                    404 -> AuthError.EndpointNotFound
+                    429 -> AuthError.TooManyRequests
+                    in 500..599 -> AuthError.ServerUnavailable
+                    else -> AuthError.Unknown("MFA login failed: HTTP ${throwable.code()}")
+                }
+            }
+
+            else -> AuthError.Unknown(throwable.message)
+        }
+    }
+
+    fun mapMfaSetupError(throwable: Throwable): AuthError {
+        return when (throwable) {
+            is IOException -> AuthError.NetworkUnavailable
+
+            is HttpException -> {
+                when (throwable.code()) {
+                    400 -> AuthError.InvalidPassword
+                    401, 403 -> AuthError.Unauthorized
+                    404 -> AuthError.EndpointNotFound
+                    429 -> AuthError.TooManyRequests
+                    in 500..599 -> AuthError.ServerUnavailable
+                    else -> AuthError.Unknown("MFA setup failed: HTTP ${throwable.code()}")
+                }
+            }
+
+            else -> AuthError.Unknown(throwable.message)
+        }
+    }
+
+    fun mapMfaConfirmError(throwable: Throwable): AuthError {
+        return when (throwable) {
+            is IOException -> AuthError.NetworkUnavailable
+
+            is HttpException -> {
+                when (throwable.code()) {
+                    400 -> AuthError.InvalidMfaCode
+                    401, 403 -> AuthError.Unauthorized
+                    404 -> AuthError.MfaSetupExpired
+                    429 -> AuthError.TooManyRequests
+                    in 500..599 -> AuthError.ServerUnavailable
+                    else -> AuthError.Unknown("MFA confirmation failed: HTTP ${throwable.code()}")
+                }
+            }
+
+            else -> AuthError.Unknown(throwable.message)
+        }
+    }
+
+    fun mapMfaDisableError(throwable: Throwable): AuthError {
+        return when (throwable) {
+            is IOException -> AuthError.NetworkUnavailable
+
+            is HttpException -> {
+                when (throwable.code()) {
+                    400 -> AuthError.InvalidMfaCode
+                    401, 403 -> AuthError.Unauthorized
+                    404 -> AuthError.MfaNotConfigured
+                    429 -> AuthError.TooManyRequests
+                    in 500..599 -> AuthError.ServerUnavailable
+                    else -> AuthError.Unknown("MFA disable failed: HTTP ${throwable.code()}")
+                }
+            }
+
+            else -> AuthError.Unknown(throwable.message)
+        }
+    }
 }

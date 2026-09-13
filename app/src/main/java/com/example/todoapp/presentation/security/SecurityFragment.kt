@@ -1,32 +1,25 @@
 package com.example.todoapp.presentation.security
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
-import com.example.todoapp.R
 import com.example.todoapp.databinding.FragmentSecurityBinding
-import com.example.todoapp.core.extensions.observeFlow
-import com.example.todoapp.domain.security.model.ShaAlgorithm
 import com.example.todoapp.domain.security.service.UnifiedOtpManager
-import com.example.todoapp.presentation.security.dialog.CustomConfirmationDialog
 import com.example.todoapp.presentation.security.state.SecurityState
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import androidx.core.net.toUri
 
 @AndroidEntryPoint
 class SecurityFragment : Fragment() {
@@ -50,177 +43,131 @@ class SecurityFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        startWork()
+        securityViewModel.onStart()
 
-        binding?.generateSecretButton?.setOnClickListener {
-            securityViewModel.generateNewSecret()
+        setupClickListeners()
+        observeMfaStatus()
+        observeSecurityState()
+    }
+
+    private fun setupClickListeners() {
+        binding?.beginMfaSetupButton?.setOnClickListener {
+            val password = binding?.currentPasswordEditText?.text.toString()
+
+            securityViewModel.beginMfaSetup(password = password)
         }
 
-        binding?.setCustomSecretButton?.setOnClickListener {
-            val customSecret = binding?.secretEditText?.text.toString().trim().uppercase()
-            securityViewModel.setCustomSecret(customSecret)
+        binding?.confirmMfaSetupButton?.setOnClickListener {
+            val code = binding?.setupCodeEditText?.text.toString()
+
+            securityViewModel.confirmMfaSetup(code = code)
         }
 
-        binding?.disableTwoFactorButton?.setOnClickListener {
-            if (securityViewModel.getSecureStatus()) {
-                securityViewModel.setSecureDisable()
-                setEmptyFields()
-                Toast.makeText(
-                    requireContext(),
-                    "You are disable 2FA successfully!",
-                    Toast.LENGTH_SHORT
-                ).show()
-            } else {
-                Toast.makeText(
-                    requireContext(),
-                    "You have already disabled 2FA!",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
+        binding?.disableMfaButton?.setOnClickListener {
+            val password = binding?.disablePasswordEditText?.text.toString()
+            val code = binding?.disableCodeEditText?.text.toString()
+
+            securityViewModel.disableMfa(
+                password = password,
+                code = code
+            )
         }
     }
 
-    private fun startWork() {
+    private fun observeMfaStatus() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            securityViewModel.isMfaEnabled
+                .flowWithLifecycle(viewLifecycleOwner.lifecycle)
+                .collectLatest { isEnabled ->
+                    binding?.mfaStatusTextView?.text = if (isEnabled) {
+                        "MFA status: enabled"
+                    } else {
+                        "MFA status: disabled"
+                    }
 
-        securityViewModel.onStart()
+                    binding?.beginMfaSetupButton?.isEnabled = !isEnabled
+                    binding?.disableMfaButton?.isEnabled = isEnabled
 
-        setupToolbarMenu()
+                    binding?.disableSectionTitleTextView?.visibility = if (isEnabled) {
+                        View.VISIBLE
+                    } else {
+                        View.GONE
+                    }
 
-        initObservers()
+                    binding?.disablePasswordEditText?.visibility = if (isEnabled) {
+                        View.VISIBLE
+                    } else {
+                        View.GONE
+                    }
 
-        lifecycleScope.launch {
-            securityViewModel.isSecure.flowWithLifecycle(lifecycle).collectLatest {
-                if (it) {
-                    binding?.clickQrCodeTextView?.visibility = View.VISIBLE
-                }
-            }
-        }
+                    binding?.disableCodeEditText?.visibility = if (isEnabled) {
+                        View.VISIBLE
+                    } else {
+                        View.GONE
+                    }
 
-        lifecycleScope.launch {
-            securityViewModel.currentAlgorithm.flowWithLifecycle(lifecycle)
-                .collectLatest { algorithm ->
-                    when (algorithm) {
-                        ShaAlgorithm.SHA1.algorithm -> {
-                            setVisibleBase32()
-                        }
-
-                        ShaAlgorithm.SHA256.algorithm -> {
-                            setInvisibleBase32()
-                        }
-
-                        ShaAlgorithm.SHA512.algorithm -> {
-                            setInvisibleBase32()
-                        }
-
-                        else -> {
-                            setInvisibleBase32()
-                        }
+                    binding?.disableMfaButton?.visibility = if (isEnabled) {
+                        View.VISIBLE
+                    } else {
+                        View.GONE
                     }
                 }
         }
-
-        observeFlow(securityViewModel.token) {
-            binding?.codeEditText?.setText(it)
-        }
     }
 
-    private fun setupToolbarMenu() {
-        requireActivity().addMenuProvider(object : MenuProvider {
-            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-                menuInflater.inflate(R.menu.toolbar_menu_securityfragment, menu)
-            }
-
-            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
-                val selectedAlgorithm = when (menuItem.itemId) {
-                    R.id.sha1_algorithm -> ShaAlgorithm.SHA1
-                    R.id.sha256_algorithm -> ShaAlgorithm.SHA256
-                    R.id.sha512_algorithm -> ShaAlgorithm.SHA512
-                    else -> return false
-                }
-
-                handleAlgorithmSelection(selectedAlgorithm)
-                return true
-            }
-        }, viewLifecycleOwner)
-    }
-
-    private fun handleAlgorithmSelection(algorithm: ShaAlgorithm) {
-        if (securityViewModel.getSecureStatus()) {
-            CustomConfirmationDialog.newInstance(
-                title = "Change algorithm",
-                message = "Do you really want to change algorithm?\nIf you click \"Yes\" then you will have to reconnect 2FA with the selected algorithm",
-                onYes = {
-                    securityViewModel.setSecureDisable()
-                    setEmptyFields()
-                    securityViewModel.setAlgorithm(algorithm)
-                }
-            ).show(parentFragmentManager, "CustomDialog")
-        } else {
-            securityViewModel.setAlgorithm(algorithm)
-        }
-    }
-
-    private fun setInvisibleBase32() {
-        binding?.base32TextView?.visibility = View.GONE
-        binding?.base32SecretEditText?.visibility = View.GONE
-    }
-
-    private fun setVisibleBase32() {
-        binding?.base32TextView?.visibility = View.VISIBLE
-        binding?.base32SecretEditText?.visibility = View.VISIBLE
-    }
-
-    private fun initObservers() {
-        lifecycleScope.launch {
-            securityViewModel.securityState.flowWithLifecycle(lifecycle)
+    private fun observeSecurityState() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            securityViewModel.securityState
+                .flowWithLifecycle(viewLifecycleOwner.lifecycle)
                 .collectLatest { securityState ->
                     when (securityState) {
+                        is SecurityState.Empty -> {
+                            hideProgress()
+                        }
+
+                        is SecurityState.Loading -> {
+                            showProgress()
+                        }
+
+                        is SecurityState.MfaSetupStarted -> {
+                            hideProgress()
+
+                            showMfaSetupData(
+                                otpUri = securityState.otpUri,
+                                secretBase32 = securityState.secretBase32
+                            )
+
+                            Toast.makeText(
+                                requireContext(),
+                                "Scan QR code or add secret manually, then enter the generated code.",
+                                Toast.LENGTH_LONG
+                            ).show()
+
+                            securityViewModel.clearState()
+                        }
+
                         is SecurityState.Success -> {
-                            binding?.progressIndicator?.visibility = View.GONE
-                            binding?.dimOverlay?.visibility = View.GONE
+                            hideProgress()
+                            clearInputFields()
+
                             Toast.makeText(
                                 requireContext(),
                                 securityState.successMsg,
                                 Toast.LENGTH_SHORT
                             ).show()
+
                             securityViewModel.clearState()
                         }
 
                         is SecurityState.Error -> {
-                            binding?.progressIndicator?.visibility = View.GONE
-                            binding?.dimOverlay?.visibility = View.GONE
+                            hideProgress()
+
                             Toast.makeText(
                                 requireContext(),
                                 securityState.errorMsg,
-                                Toast.LENGTH_SHORT
+                                Toast.LENGTH_LONG
                             ).show()
-                            securityViewModel.clearState()
-                        }
 
-                        is SecurityState.LoadingData -> {
-                            binding?.secretEditText?.setText(securityState.secret)
-                            binding?.qrCodeImageView?.setImageBitmap(
-                                otpManager.generateQrCode(
-                                    securityState.otpUri
-                                )
-                            )
-                            binding?.base32SecretEditText?.setText(securityState.base32secret)
-                            binding?.qrCodeImageView?.setOnClickListener {
-                                openGoogleAuthenticator(securityState.otpUri)
-                            }
-                            binding?.progressIndicator?.visibility = View.GONE
-                            binding?.dimOverlay?.visibility = View.GONE
-                            securityViewModel.clearState()
-                        }
-
-                        is SecurityState.Loading -> {
-                            binding?.progressIndicator?.visibility = View.VISIBLE
-                            binding?.dimOverlay?.visibility = View.VISIBLE
-                        }
-
-                        else -> {
-                            binding?.progressIndicator?.visibility = View.GONE
-                            binding?.dimOverlay?.visibility = View.GONE
                             securityViewModel.clearState()
                         }
                     }
@@ -228,28 +175,58 @@ class SecurityFragment : Fragment() {
         }
     }
 
-    @SuppressLint("SetTextI18n")
-    private fun setEmptyFields() {
-        binding?.apply {
-            codeEditText.setText("")
-            secretEditText.setText("")
-            qrCodeImageView.setImageDrawable(null)
-            base32SecretEditText.setText("")
-            binding?.clickQrCodeTextView?.visibility = View.GONE
+    private fun showMfaSetupData(
+        otpUri: String,
+        secretBase32: String
+    ) {
+        binding?.setupDataContainer?.visibility = View.VISIBLE
+
+        binding?.base32SecretEditText?.setText(secretBase32)
+
+        binding?.qrCodeImageView?.setImageBitmap(
+            otpManager.generateQrCode(otpUri)
+        )
+
+        binding?.qrCodeImageView?.setOnClickListener {
+            openAuthenticatorApp(otpUri)
         }
+
+        binding?.clickQrCodeTextView?.visibility = View.VISIBLE
     }
 
-    private fun openGoogleAuthenticator(otpUri: String) {
+    private fun clearInputFields() {
+        binding?.currentPasswordEditText?.setText("")
+        binding?.setupCodeEditText?.setText("")
+        binding?.disablePasswordEditText?.setText("")
+        binding?.disableCodeEditText?.setText("")
+    }
+
+    private fun showProgress() {
+        binding?.progressIndicator?.visibility = View.VISIBLE
+        binding?.dimOverlay?.visibility = View.VISIBLE
+    }
+
+    private fun hideProgress() {
+        binding?.progressIndicator?.visibility = View.GONE
+        binding?.dimOverlay?.visibility = View.GONE
+    }
+
+    private fun openAuthenticatorApp(otpUri: String) {
         try {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(otpUri))
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            Log.e("TestQr","Uri = $otpUri")
+            val intent = Intent(Intent.ACTION_VIEW, otpUri.toUri())
             startActivity(intent)
         } catch (e: Exception) {
             Toast.makeText(
                 requireContext(),
-                "Unable to open Google Authenticator",
+                "Unable to open authenticator app.",
                 Toast.LENGTH_SHORT
             ).show()
         }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
     }
 }

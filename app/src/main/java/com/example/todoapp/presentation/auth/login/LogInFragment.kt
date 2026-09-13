@@ -18,6 +18,7 @@ import com.example.todoapp.presentation.auth.state.AuthenticationState
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
+import androidx.core.os.bundleOf
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -76,11 +77,22 @@ class LogInFragment : Fragment() {
                         logInViewModel.clearState()
                     }
 
-                    is AuthenticationState.SuccessWithSecureEnable -> {
-                        findNavController().navigate(R.id.navigate_logInFragment_to_twoAuthFragment)
+                    is AuthenticationState.MfaRequired -> {
                         activityUI.showProgressBar(false)
+
+                        findNavController().navigate(
+                            R.id.navigate_logInFragment_to_twoAuthFragment,
+                            bundleOf(ARG_LOGIN_TICKET to logInState.loginTicket)
+                        )
+
                         logInViewModel.clearState()
                     }
+
+//                    is AuthenticationState.SuccessWithSecureEnable -> {
+//                        findNavController().navigate(R.id.navigate_logInFragment_to_twoAuthFragment)
+//                        activityUI.showProgressBar(false)
+//                        logInViewModel.clearState()
+//                    }
 
                     is AuthenticationState.Loading -> {
                         activityUI.showProgressBar(true)
@@ -104,5 +116,9 @@ class LogInFragment : Fragment() {
                 }
             }
         }
+    }
+
+    private companion object {
+        const val ARG_LOGIN_TICKET = "loginTicket"
     }
 }

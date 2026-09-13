@@ -12,5 +12,6 @@ sealed class AuthenticationState {
     data class ErrorReset(val errorMsg: String) : AuthenticationState()
     data class PasswordResetRequested(val message: String, val devResetToken: String?) : AuthenticationState()
     data class PasswordResetCompleted(val message: String) : AuthenticationState()
+    data class MfaRequired(val loginTicket: String) : AuthenticationState()
     data object Loading : AuthenticationState()
 }

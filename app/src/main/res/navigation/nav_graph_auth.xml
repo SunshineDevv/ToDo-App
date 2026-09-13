@@ -42,13 +42,20 @@
         android:id="@+id/twoAuthFragment"
         android:name="com.example.todoapp.presentation.auth.login.TwoAuthFragment"
         android:label=""
-        tools:layout="@layout/fragment_two_auth" >
+        tools:layout="@layout/fragment_two_auth">
+
+        <argument
+            android:name="loginTicket"
+            app:argType="string" />
+
         <action
             android:id="@+id/navigate_twoAuthFragment_to_mainActivity"
             app:destination="@id/mainActivity" />
         <action
             android:id="@+id/navigate_twoAuthFragment_to_logInFragment"
-            app:destination="@id/logInFragment" />
+            app:destination="@id/logInFragment"
+            app:popUpTo="@id/logInFragment"
+            app:popUpToInclusive="false" />
     </fragment>
     <fragment
         android:id="@+id/forgetPassFragment"

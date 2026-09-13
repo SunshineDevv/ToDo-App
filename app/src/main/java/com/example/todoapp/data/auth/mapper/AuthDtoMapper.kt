@@ -10,6 +10,11 @@ import com.example.todoapp.domain.auth.model.ForgotPasswordResult
 import com.example.todoapp.domain.auth.model.LoginResult
 import com.example.todoapp.domain.auth.model.ResetPasswordResult
 import com.example.todoapp.domain.auth.model.TokenPair
+import com.example.todoapp.data.auth.remote.dto.VerifyMfaLoginResponse
+import com.example.todoapp.data.auth.remote.dto.MfaSetupBeginResponse
+import com.example.todoapp.data.auth.remote.dto.MfaStatusResponse
+import com.example.todoapp.domain.auth.model.MfaSetupData
+import com.example.todoapp.domain.auth.model.MfaStatus
 
 object AuthDtoMapper {
 
@@ -27,7 +32,7 @@ object AuthDtoMapper {
 
     fun LoginResponse.toDomain(): LoginResult? {
         if (mfaRequired) {
-            val ticket = loginTicket ?: return null
+            val ticket = loginTicket?.takeIf { it.isNotBlank() } ?: return null
 
             return LoginResult.MfaRequired(
                 loginTicket = ticket
@@ -35,9 +40,10 @@ object AuthDtoMapper {
         }
 
         val tokenPair = toTokenPair() ?: return null
+        val authUser = user?.toDomain() ?: return null
 
         return LoginResult.Success(
-            user = user?.toDomain(),
+            user = authUser,
             tokens = tokenPair
         )
     }
@@ -81,6 +87,53 @@ object AuthDtoMapper {
     fun ResetPasswordResponse.toDomain(): ResetPasswordResult {
         return ResetPasswordResult(
             message = message ?: "Password has been reset successfully."
+        )
+    }
+
+    fun VerifyMfaLoginResponse.toTokenPair(): TokenPair? {
+        val access = accessToken ?: return null
+        val refresh = refreshToken ?: return null
+
+        if (access.isBlank() || refresh.isBlank()) {
+            return null
+        }
+
+        return TokenPair(
+            accessToken = access,
+            refreshToken = refresh
+        )
+    }
+
+    fun VerifyMfaLoginResponse.toDomain(): LoginResult.Success? {
+        val tokenPair = toTokenPair()
+        val authUser = user?.toDomain()
+
+        if (tokenPair == null || authUser == null) {
+            return null
+        }
+
+        return LoginResult.Success(
+            user = authUser,
+            tokens = tokenPair
+        )
+    }
+
+    fun MfaSetupBeginResponse.toDomain(): MfaSetupData? {
+        val uri = otpUri?.takeIf { it.isNotBlank() } ?: return null
+        val secret = secretBase32?.takeIf { it.isNotBlank() } ?: return null
+
+        return MfaSetupData(
+            otpUri = uri,
+            secretBase32 = secret,
+            expiresAt = expiresAt
+        )
+    }
+
+    fun MfaStatusResponse.toDomain(): MfaStatus? {
+        val status = enabled ?: return null
+
+        return MfaStatus(
+            enabled = status
         )
     }
 }

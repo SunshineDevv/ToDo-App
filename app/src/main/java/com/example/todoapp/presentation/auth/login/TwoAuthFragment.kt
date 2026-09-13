@@ -14,7 +14,6 @@ import androidx.navigation.fragment.findNavController
 import com.example.todoapp.R
 import com.example.todoapp.databinding.FragmentTwoAuthBinding
 import com.example.todoapp.presentation.auth.state.AuthenticationState
-import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -26,14 +25,24 @@ class TwoAuthFragment : Fragment() {
 
     private val twoAuthViewModel: TwoAuthVIewModel by viewModels()
 
+    private val loginTicket: String
+        get() = requireArguments().getString(ARG_LOGIN_TICKET).orEmpty()
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        binding = DataBindingUtil.inflate(inflater, R.layout.fragment_two_auth, container, false)
+        binding = DataBindingUtil.inflate(
+            inflater,
+            R.layout.fragment_two_auth,
+            container,
+            false
+        )
+
         binding?.viewmodel = twoAuthViewModel
         binding?.lifecycleOwner = viewLifecycleOwner
+
         return binding?.root
     }
 
@@ -41,52 +50,97 @@ class TwoAuthFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         initObservers()
+        setupClickListeners()
+    }
 
+    private fun setupClickListeners() {
         binding?.verifyButton?.setOnClickListener {
-            val inputToken = binding?.tokenEditText?.text.toString()
-            twoAuthViewModel.validateUserInputCode(inputToken)
+            val inputCode = binding?.tokenEditText?.text.toString()
+
+            twoAuthViewModel.validateUserInputCode(
+                loginTicket = loginTicket,
+                userInputCode = inputCode
+            )
         }
     }
 
     private fun initObservers() {
-        lifecycleScope.launch {
-            twoAuthViewModel.twoAuthState.flowWithLifecycle(lifecycle).collectLatest { twoAuthState ->
-                when (twoAuthState) {
-                    is AuthenticationState.Success -> {
-                        findNavController().navigate(R.id.navigate_twoAuthFragment_to_mainActivity)
-                        requireActivity().finish()
-                        binding?.progressIndicator?.visibility = View.GONE
-                        twoAuthViewModel.clearState()
-                    }
+        viewLifecycleOwner.lifecycleScope.launch {
+            twoAuthViewModel.twoAuthState
+                .flowWithLifecycle(viewLifecycleOwner.lifecycle)
+                .collectLatest { twoAuthState ->
+                    when (twoAuthState) {
+                        is AuthenticationState.Success -> {
+                            hideProgress()
 
-                    is AuthenticationState.FatalError -> {
-                        FirebaseAuth.getInstance().signOut()
-                        Toast.makeText(requireContext(),twoAuthState.errorMsg, Toast.LENGTH_LONG).show()
-                        findNavController().navigate(R.id.navigate_twoAuthFragment_to_logInFragment)
-                        binding?.progressIndicator?.visibility = View.GONE
-                        binding?.dimOverlay?.visibility = View.GONE
-                        twoAuthViewModel.clearState()
-                    }
+                            findNavController().navigate(
+                                R.id.navigate_twoAuthFragment_to_mainActivity
+                            )
 
-                    is AuthenticationState.Error -> {
-                        Toast.makeText(requireContext(),twoAuthState.errorMsg, Toast.LENGTH_LONG).show()
-                        binding?.progressIndicator?.visibility = View.GONE
-                        binding?.dimOverlay?.visibility = View.GONE
-                        twoAuthViewModel.clearState()
-                    }
+                            requireActivity().finish()
+                            twoAuthViewModel.clearState()
+                        }
 
-                    is AuthenticationState.Loading -> {
-                        binding?.progressIndicator?.visibility = View.VISIBLE
-                        binding?.dimOverlay?.visibility = View.VISIBLE
-                    }
+                        is AuthenticationState.FatalError -> {
+                            hideProgress()
 
-                    else -> {
-                        binding?.progressIndicator?.visibility = View.GONE
-                        binding?.dimOverlay?.visibility = View.GONE
-                        twoAuthViewModel.clearState()
+                            Toast.makeText(
+                                requireContext(),
+                                twoAuthState.errorMsg,
+                                Toast.LENGTH_LONG
+                            ).show()
+
+                            findNavController().navigate(
+                                R.id.navigate_twoAuthFragment_to_logInFragment
+                            )
+
+                            twoAuthViewModel.clearState()
+                        }
+
+                        is AuthenticationState.Error -> {
+                            hideProgress()
+
+                            Toast.makeText(
+                                requireContext(),
+                                twoAuthState.errorMsg,
+                                Toast.LENGTH_LONG
+                            ).show()
+
+                            twoAuthViewModel.clearState()
+                        }
+
+                        is AuthenticationState.Loading -> {
+                            showProgress()
+                        }
+
+                        is AuthenticationState.Empty -> {
+                            hideProgress()
+                        }
+
+                        else -> {
+                            hideProgress()
+                        }
                     }
                 }
-            }
         }
+    }
+
+    private fun showProgress() {
+        binding?.progressIndicator?.visibility = View.VISIBLE
+        binding?.dimOverlay?.visibility = View.VISIBLE
+    }
+
+    private fun hideProgress() {
+        binding?.progressIndicator?.visibility = View.GONE
+        binding?.dimOverlay?.visibility = View.GONE
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
+    }
+
+    private companion object {
+        const val ARG_LOGIN_TICKET = "loginTicket"
     }
 }
