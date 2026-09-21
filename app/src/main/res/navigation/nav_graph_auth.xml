@@ -76,6 +76,11 @@
         tools:layout="@layout/fragment_reset_pass">
 
         <argument
+            android:name="token"
+            app:argType="string"
+            android:defaultValue="" />
+
+        <argument
             android:name="resetToken"
             app:argType="string"
             android:defaultValue="" />
@@ -84,5 +89,7 @@
             app:destination="@id/logInFragment"
             app:popUpTo="@id/logInFragment"
             app:popUpToInclusive="false" />
+        <deepLink
+            app:uri="todoapp://reset-password?token={token}" />
     </fragment>
 </navigation>

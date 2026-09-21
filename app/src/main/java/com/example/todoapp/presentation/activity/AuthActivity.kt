@@ -3,6 +3,7 @@ package com.example.todoapp.presentation.activity
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -17,13 +18,12 @@ import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupWithNavController
 import com.example.todoapp.R
 import com.example.todoapp.databinding.ActivityAuthBinding
+import com.example.todoapp.domain.auth.model.RestoreSessionResult
 import com.example.todoapp.domain.auth.usecase.CheckAuthStateUseCase
 import com.google.android.material.tabs.TabLayout
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import android.widget.Toast
-import com.example.todoapp.domain.auth.model.RestoreSessionResult
 
 @AndroidEntryPoint
 class AuthActivity : AppCompatActivity(), ActivityUIController {
@@ -50,19 +50,53 @@ class AuthActivity : AppCompatActivity(), ActivityUIController {
 
         enableEdgeToEdge()
         setContentView(binding?.root)
+
+        setupWindowInsets()
+        setupNavigation()
         setupActionBar()
+        setupTabLayout()
+        setupVisualBehavior()
+
+        if (isPasswordResetDeepLink(intent)) {
+            isCheckingAuth = false
+            navController.handleDeepLink(intent)
+        } else {
+            checkInitialAuthState()
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+
+        if (::navController.isInitialized && isPasswordResetDeepLink(intent)) {
+            isCheckingAuth = false
+            navController.handleDeepLink(intent)
+        }
+    }
+
+    private fun setupWindowInsets() {
         binding?.mainAuth?.let {
-            ViewCompat.setOnApplyWindowInsetsListener(it) { v, insets ->
+            ViewCompat.setOnApplyWindowInsetsListener(it) { view, insets ->
                 val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+
+                view.setPadding(
+                    systemBars.left,
+                    systemBars.top,
+                    systemBars.right,
+                    systemBars.bottom
+                )
+
                 insets
             }
         }
+    }
 
-        setupTabLayout()
-        changeVisualOfActivity()
+    private fun setupNavigation() {
+        val navHostFragment = supportFragmentManager
+            .findFragmentById(R.id.fragmentContainerView) as NavHostFragment
 
-        checkInitialAuthState()
+        navController = navHostFragment.navController
     }
 
     private fun checkInitialAuthState() {
@@ -119,10 +153,6 @@ class AuthActivity : AppCompatActivity(), ActivityUIController {
     }
 
     private fun setupTabLayout() {
-        val navHostFragment =
-            supportFragmentManager.findFragmentById(R.id.fragmentContainerView) as NavHostFragment
-        navController = navHostFragment.navController
-
         binding?.tabLayout?.apply {
             addTab(newTab().setText("Log in"))
             addTab(newTab().setText("Sign up"))
@@ -145,22 +175,25 @@ class AuthActivity : AppCompatActivity(), ActivityUIController {
                 }
             }
 
-            override fun onTabUnselected(tab: TabLayout.Tab?) {}
+            override fun onTabUnselected(tab: TabLayout.Tab?) = Unit
 
-            override fun onTabReselected(tab: TabLayout.Tab?) {}
+            override fun onTabReselected(tab: TabLayout.Tab?) = Unit
         })
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
             when (destination.id) {
-                R.id.logInFragment -> binding?.tabLayout?.selectTab(binding?.tabLayout?.getTabAt(0))
-                R.id.signUpFragment -> binding?.tabLayout?.selectTab(binding?.tabLayout?.getTabAt(1))
+                R.id.logInFragment -> {
+                    binding?.tabLayout?.selectTab(binding?.tabLayout?.getTabAt(0))
+                }
+
+                R.id.signUpFragment -> {
+                    binding?.tabLayout?.selectTab(binding?.tabLayout?.getTabAt(1))
+                }
             }
         }
     }
 
-    private fun changeVisualOfActivity() {
-        navController = findNavController()
-
+    private fun setupVisualBehavior() {
         navController.addOnDestinationChangedListener { _, destination, _ ->
             when (destination.id) {
                 R.id.twoAuthFragment, R.id.forgetPassFragment, R.id.resetPassFragment -> {
@@ -200,8 +233,6 @@ class AuthActivity : AppCompatActivity(), ActivityUIController {
     }
 
     private fun setupActionBar() {
-        val navController = findNavController()
-
         val toolbar = AppBarConfiguration(
             topLevelDestinationIds = setOf(R.id.logInFragment)
         )
@@ -211,17 +242,11 @@ class AuthActivity : AppCompatActivity(), ActivityUIController {
         binding?.toolbar?.setupWithNavController(navController, toolbar)
 
         navController.addOnDestinationChangedListener { _, destination, _ ->
-            updateToolbars(destination)
+            updateToolbar(destination)
         }
     }
 
-    private fun findNavController(): NavController {
-        val navHostFragment = supportFragmentManager
-            .findFragmentById(R.id.fragmentContainerView) as NavHostFragment
-        return navHostFragment.navController
-    }
-
-    private fun updateToolbars(destination: NavDestination) {
+    private fun updateToolbar(destination: NavDestination) {
         when (destination.id) {
             R.id.twoAuthFragment -> {
                 supportActionBar?.apply {
@@ -267,6 +292,15 @@ class AuthActivity : AppCompatActivity(), ActivityUIController {
             }
         }
     }
+
+    private fun isPasswordResetDeepLink(intent: Intent?): Boolean {
+        val data = intent?.data ?: return false
+
+        return data.scheme == PASSWORD_RESET_SCHEME &&
+                data.host == PASSWORD_RESET_HOST &&
+                !data.getQueryParameter(ARG_TOKEN).isNullOrBlank()
+    }
+
     override fun showProgressBar(show: Boolean) {
         if (show){
             binding?.progressIndicator?.visibility = View.VISIBLE
@@ -280,5 +314,11 @@ class AuthActivity : AppCompatActivity(), ActivityUIController {
     override fun onDestroy() {
         super.onDestroy()
         binding = null
+    }
+
+    private companion object {
+        const val PASSWORD_RESET_SCHEME = "todoapp"
+        const val PASSWORD_RESET_HOST = "reset-password"
+        const val ARG_TOKEN = "token"
     }
 }

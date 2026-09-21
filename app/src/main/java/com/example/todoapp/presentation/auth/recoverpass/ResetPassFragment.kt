@@ -26,6 +26,17 @@ class ResetPassFragment : Fragment() {
 
     private val resetPassViewModel: ResetPassViewModel by viewModels()
 
+    private val resetTokenFromArgs: String
+        get() {
+            val token = arguments?.getString(ARG_TOKEN).orEmpty()
+
+            if (token.isNotBlank()) {
+                return token
+            }
+
+            return arguments?.getString(ARG_RESET_TOKEN).orEmpty()
+        }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -40,15 +51,29 @@ class ResetPassFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val resetToken = arguments?.getString(ARG_RESET_TOKEN).orEmpty()
+        val resetToken = resetTokenFromArgs
+
+        if (resetToken.isBlank()) {
+            Toast.makeText(
+                requireContext(),
+                "Password reset link is invalid.",
+                Toast.LENGTH_LONG
+            ).show()
+
+            findNavController().navigate(R.id.navigate_resetPassFragment_to_logInFragment)
+            return
+        }
 
         resetPassViewModel.resetToken.value = resetToken
         binding?.editTextResetToken?.setText(resetToken)
 
         initObservers()
+        setupClickListeners()
+    }
 
+    private fun setupClickListeners() {
         binding?.buttonResetPassword?.setOnClickListener {
-            val token = binding?.editTextResetToken?.text.toString()
+            val token = resetTokenFromArgs.ifBlank { binding?.editTextResetToken?.text.toString() }
             val newPassword = binding?.editTextNewPassword?.text.toString()
             val confirmPassword = binding?.editTextConfirmPassword?.text.toString()
 
@@ -114,6 +139,7 @@ class ResetPassFragment : Fragment() {
     }
 
     private companion object {
+        const val ARG_TOKEN = "token"
         const val ARG_RESET_TOKEN = "resetToken"
     }
 }
