@@ -3,7 +3,7 @@ package com.example.todoapp.presentation.note.detail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.todoapp.R
-import com.example.todoapp.data.legacy.repository.NoteRepository
+import com.example.todoapp.data.note.repository.NoteRepository
 import com.example.todoapp.presentation.note.state.NoteState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers

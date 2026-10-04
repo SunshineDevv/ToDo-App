@@ -1,8 +1,8 @@
 package com.example.todoapp.data.auth.mapper
 
 import com.example.todoapp.domain.auth.model.AuthError
-import retrofit2.HttpException
 import org.json.JSONObject
+import retrofit2.HttpException
 import java.io.IOException
 
 object AuthExceptionMapper {
@@ -132,10 +132,10 @@ object AuthExceptionMapper {
                 when (throwable.code()) {
                     400 -> {
                         when (extractBackendErrorCode(throwable)) {
-                            "MFA_CODE_INVALID",
-                            "MFA_CODE_REPLAYED" -> AuthError.InvalidMfaCode
-
-                            "MFA_NOT_CONFIGURED" -> AuthError.MfaNotConfigured
+                            "MFA_CODE_REPLAYED" -> AuthError.MfaCodeAlreadyUsed
+                            "MFA_CODE_INVALID" -> AuthError.InvalidMfaCode
+                            "MFA_NOT_CONFIGURED",
+                            "MFA_NOT_ENABLED" -> AuthError.MfaNotConfigured
 
                             else -> AuthError.InvalidMfaCode
                         }
@@ -163,8 +163,8 @@ object AuthExceptionMapper {
                         when (extractBackendErrorCode(throwable)) {
                             "INVALID_CREDENTIALS" -> AuthError.InvalidPassword
 
+                            "MFA_CODE_REPLAYED" -> AuthError.MfaCodeAlreadyUsed
                             "MFA_CODE_INVALID",
-                            "MFA_CODE_REPLAYED",
                             "MFA_CURRENT_CODE_REQUIRED" -> AuthError.InvalidMfaCode
 
                             "MFA_NOT_CONFIGURED",
@@ -196,8 +196,8 @@ object AuthExceptionMapper {
                 when (throwable.code()) {
                     400 -> {
                         when (extractBackendErrorCode(throwable)) {
-                            "MFA_CODE_INVALID",
-                            "MFA_CODE_REPLAYED" -> AuthError.InvalidMfaCode
+                            "MFA_CODE_REPLAYED" -> AuthError.MfaCodeAlreadyUsed
+                            "MFA_CODE_INVALID" -> AuthError.InvalidMfaCode
 
                             "MFA_ENROLLMENT_NOT_FOUND",
                             "MFA_ENROLLMENT_EXPIRED" -> AuthError.MfaSetupExpired
@@ -228,8 +228,8 @@ object AuthExceptionMapper {
                         when (extractBackendErrorCode(throwable)) {
                             "INVALID_CREDENTIALS" -> AuthError.InvalidPassword
 
-                            "MFA_CODE_INVALID",
-                            "MFA_CODE_REPLAYED" -> AuthError.InvalidMfaCode
+                            "MFA_CODE_REPLAYED" -> AuthError.MfaCodeAlreadyUsed
+                            "MFA_CODE_INVALID" -> AuthError.InvalidMfaCode
 
                             "MFA_NOT_CONFIGURED",
                             "MFA_NOT_ENABLED" -> AuthError.MfaNotConfigured

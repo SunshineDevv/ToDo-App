@@ -14,6 +14,7 @@ sealed interface AuthError {
 
     data object InvalidPassword : AuthError
     data object InvalidMfaCode : AuthError
+    data object MfaCodeAlreadyUsed : AuthError
     data object InvalidMfaChallenge : AuthError
     data object MfaSetupExpired : AuthError
     data object MfaNotConfigured : AuthError

@@ -17,10 +17,12 @@ object AuthErrorMessageMapper {
             AuthError.EndpointNotFound -> "Authentication endpoint was not found."
             AuthError.InvalidServerResponse -> "Authentication server returned invalid response."
             AuthError.InvalidMfaCode -> "Invalid authentication code."
+            AuthError.MfaCodeAlreadyUsed -> "This code was already used. Please wait for a new code."
             AuthError.InvalidMfaChallenge -> "MFA session expired. Please log in again."
             AuthError.InvalidPassword -> "Invalid password."
             AuthError.MfaSetupExpired -> "MFA setup expired. Start setup again."
             AuthError.MfaNotConfigured -> "MFA is not configured."
-            is AuthError.Unknown -> "Authentication request failed."        }
+            is AuthError.Unknown -> "Authentication request failed."
+        }
     }
 }

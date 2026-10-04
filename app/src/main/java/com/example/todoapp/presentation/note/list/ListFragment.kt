@@ -78,7 +78,7 @@ class ListFragment : Fragment(), ListAdapter.RecyclerItemClicked {
         listAdapter = ListAdapter(this)
         setupAdaptiveLayout()
         binding?.recyclerView?.adapter = listAdapter
-        noteListViewModel.syncNotesToFirestore()
+        noteListViewModel.syncNotesToBackend()
     }
 
     private fun setupAdaptiveLayout() {

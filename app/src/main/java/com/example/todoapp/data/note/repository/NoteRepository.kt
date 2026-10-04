@@ -1,4 +1,4 @@
-package com.example.todoapp.data.legacy.repository
+package com.example.todoapp.data.note.repository
 
 import androidx.lifecycle.LiveData
 import com.example.todoapp.data.local.database.dao.NoteDao

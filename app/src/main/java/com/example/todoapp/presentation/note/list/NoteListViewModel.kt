@@ -3,11 +3,10 @@ package com.example.todoapp.presentation.note.list
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.todoapp.core.extensions.observeLiveData
-import com.example.todoapp.core.extensions.toNoteDbModel
 import com.example.todoapp.core.extensions.toNoteModelList
 import com.example.todoapp.core.result.AppResult
 import com.example.todoapp.data.local.database.entity.NoteDb
-import com.example.todoapp.data.legacy.repository.NoteRepository
+import com.example.todoapp.data.note.repository.NoteRepository
 import com.example.todoapp.domain.auth.usecase.GetCurrentUserUseCase
 import com.example.todoapp.presentation.note.detail.NoteModel
 import com.example.todoapp.presentation.note.state.NoteState
@@ -67,7 +66,7 @@ class NoteListViewModel @Inject constructor(
         }
     }
 
-    fun syncNotesToFirestore() {
+    fun syncNotesToBackend() {
         refreshNotesFromBackend()
     }
 
