@@ -3,10 +3,8 @@ package com.example.todoapp.presentation.note.detail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.todoapp.R
-import com.example.todoapp.data.local.database.entity.NoteDb
 import com.example.todoapp.data.legacy.repository.NoteRepository
 import com.example.todoapp.presentation.note.state.NoteState
-import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,8 +16,6 @@ import javax.inject.Inject
 class NoteViewModel @Inject constructor(
     private val repository: NoteRepository,
 ) : ViewModel() {
-
-    private val firestore = FirebaseFirestore.getInstance()
 
     val nameNote = MutableStateFlow("")
     val textNote = MutableStateFlow("")
@@ -56,6 +52,7 @@ class NoteViewModel @Inject constructor(
     fun updateBackgroundsFromButton(buttonDrawableRes: Int) {
         val newBackgroundRes =
             buttonToBackgroundMap[buttonDrawableRes] ?: R.drawable.rounded_background_orange
+
         _layoutBackgroundColor.value = newBackgroundRes
         _editTextBackgroundColor.value = newBackgroundRes
     }
@@ -65,7 +62,7 @@ class NoteViewModel @Inject constructor(
             val index1 = position1 - 1
             val index2 = position2 - 1
 
-            if (index1 != -1 && index2 != -1) {
+            if (index1 in indices && index2 in indices) {
                 val tempValue = this[index1].second
                 this[index1] = this[index1].copy(second = this[index2].second)
                 this[index2] = this[index2].copy(second = tempValue)
@@ -75,56 +72,24 @@ class NoteViewModel @Inject constructor(
 
     fun addNote(
         noteId: String,
-        userOwnerId: String,
         nameNote: String,
         textNote: String,
-        dateCreateNote: Long,
-        dateUpdateNote: Long,
         noteColor: String
     ) {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.upsert(
-                NoteDb(
+            try {
+                repository.createNote(
                     id = noteId,
-                    userOwnerId = userOwnerId,
                     noteName = nameNote,
                     noteText = textNote,
-                    dateCreate = dateCreateNote,
-                    dateUpdate = dateUpdateNote,
                     noteColor = noteColor
                 )
-            )
-        }
-        _Note_state.value = NoteState.Success("New note was added!")
-    }
 
-    fun addNoteToFirestore(
-        noteId: String,
-        noteOwnerId: String,
-        nameNote: String,
-        textNote: String,
-        dateCreateNote: Long,
-        dateUpdateNote: Long,
-        noteColor: String
-    ) {
-        val note = hashMapOf(
-            "nameNote" to nameNote,
-            "textNote" to textNote,
-            "dateCreateNote" to dateCreateNote,
-            "dateUpdateNote" to dateUpdateNote,
-            "noteColor" to noteColor
-        )
-        firestore.collection("users")
-            .document(noteOwnerId)
-            .collection("notes")
-            .document(noteId)
-            .set(note)
-            .addOnSuccessListener {
-                _Note_state.value = NoteState.Success("Note added to Firestore!")
+                _Note_state.value = NoteState.Success("New note was added!")
+            } catch (e: Exception) {
+                _Note_state.value = NoteState.Error("Failed to add note: ${e.message}")
             }
-            .addOnFailureListener {
-                _Note_state.value = NoteState.Error("Failed to add note: ${it.message}")
-            }
+        }
     }
 
     fun clearState() {

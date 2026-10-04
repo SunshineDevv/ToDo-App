@@ -3,11 +3,8 @@ package com.example.todoapp.presentation.note.update
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.todoapp.R
-import com.example.todoapp.data.local.database.entity.NoteDb
 import com.example.todoapp.data.legacy.repository.NoteRepository
-import com.example.todoapp.core.extensions.toDateInMillis
 import com.example.todoapp.presentation.note.state.NoteState
-import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,8 +16,6 @@ import javax.inject.Inject
 class UpdateNoteViewModel @Inject constructor(
     private val repository: NoteRepository
 ) : ViewModel() {
-
-    private val firestore = FirebaseFirestore.getInstance()
 
     val nameNote = MutableStateFlow("")
     val textNote = MutableStateFlow("")
@@ -110,49 +105,24 @@ class UpdateNoteViewModel @Inject constructor(
 
     fun updateNote(
         idNote: String,
-        userOwnerId : String,
         nameNote: String,
         textNote: String,
-        dateCreateNote: String,
-        dateUpdateNote: String,
         noteColor: String
     ) {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.upsert(
-                NoteDb(
+            try {
+                repository.updateNote(
                     id = idNote,
-                    userOwnerId = userOwnerId,
                     noteName = nameNote,
                     noteText = textNote,
-                    dateCreate = dateCreateNote.toDateInMillis(),
-                    dateUpdate = dateUpdateNote.toDateInMillis(),
                     noteColor = noteColor
                 )
-            )
-        }
-        _Note_state.value = NoteState.Success("Note was updated!")
-    }
 
-    fun updateNoteInFirestore(
-        noteId: String,
-        noteOwnerId: String,
-        nameNote: String,
-        textNote: String,
-        dateCreateNote: String,
-        dateUpdateNote: String,
-        noteColor: String
-    ) {
-        firestore.collection("users")
-            .document(noteOwnerId)
-            .collection("notes")
-            .document(noteId)
-            .update("nameNote", nameNote, "textNote", textNote,"dateCreateNote", dateCreateNote,"dateUpdateNote", dateUpdateNote, "noteColor", noteColor)
-            .addOnSuccessListener {
-                _Note_state.value = NoteState.Success("Note updated in Firestore!")
+                _Note_state.value = NoteState.Success("Note was updated!")
+            } catch (e: Exception) {
+                _Note_state.value = NoteState.Error("Failed to update note: ${e.message}")
             }
-            .addOnFailureListener {
-                _Note_state.value = NoteState.Error("Failed to update note: ${it.message}")
-            }
+        }
     }
 
     fun clearState() {

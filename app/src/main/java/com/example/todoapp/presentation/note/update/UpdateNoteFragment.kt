@@ -23,9 +23,7 @@ import androidx.navigation.fragment.navArgs
 import androidx.window.layout.WindowMetricsCalculator
 import com.example.todoapp.R
 import com.example.todoapp.databinding.FragmentUpdateNoteBinding
-import com.example.todoapp.core.extensions.toFormattedDate
 import com.example.todoapp.presentation.note.state.NoteState
-import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -71,27 +69,15 @@ class UpdateNoteFragment : Fragment() {
         binding?.updateNoteButton?.setOnClickListener {
             val newNameNote = binding?.nameEditText?.text.toString()
             val newTextNote = binding?.textNoteEditText?.text.toString()
-            val dateUpdateNote = System.currentTimeMillis().toFormattedDate()
             val resourceName = getResourceName()
-            val userOwnerId = FirebaseAuth.getInstance().currentUser?.uid
-            if (resourceName != null && userOwnerId != null) {
+
+            if (resourceName != null) {
                 updateNoteViewModel.updateNote(
-                    idNote,
-                    userOwnerId,
-                    newNameNote,
-                    newTextNote,
-                    dateCreateNote,
-                    dateUpdateNote,
-                    resourceName
+                    idNote = idNote,
+                    nameNote = newNameNote,
+                    textNote = newTextNote,
+                    noteColor = resourceName
                 )
-                updateNoteViewModel.updateNoteInFirestore(
-                    idNote,
-                    userOwnerId,
-                    newNameNote,
-                    newTextNote,
-                    dateCreateNote,
-                    dateUpdateNote,
-                    resourceName)
             }
             findNavController().navigate(R.id.navigate_updateNoteFragment_to_listFragment)
         }

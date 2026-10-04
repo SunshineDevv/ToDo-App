@@ -3,13 +3,17 @@ package com.example.todoapp.data.legacy.repository
 import androidx.lifecycle.LiveData
 import com.example.todoapp.data.local.database.dao.NoteDao
 import com.example.todoapp.data.local.database.entity.NoteDb
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.tasks.await
+import com.example.todoapp.data.note.mapper.toNoteDb
+import com.example.todoapp.data.note.remote.api.NotesBackendApi
+import com.example.todoapp.data.note.remote.dto.CreateNoteRequest
+import com.example.todoapp.data.note.remote.dto.UpdateNoteRequest
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class NoteRepository @Inject constructor(
     private val noteDao: NoteDao,
-    private val firestore: FirebaseFirestore
+    private val notesApi: NotesBackendApi
 ) {
 
     val allNotes: LiveData<List<NoteDb>> = noteDao.getAllNotes()
@@ -26,95 +30,70 @@ class NoteRepository @Inject constructor(
         return noteDao.getUserNotes(userId)
     }
 
-    private suspend fun syncLocalNotesToFirestore(userId: String) {
-        try {
-            val unsyncedNotes = noteDao.getUnsyncedNotesForUser(userId)
-            unsyncedNotes.forEach { note ->
-                val noteData = hashMapOf(
-                    "noteName" to note.noteName,
-                    "noteText" to note.noteText,
-                    "dateCreate" to note.dateCreate,
-                    "dateUpdate" to note.dateUpdate,
-                    "noteColor" to note.noteColor,
-                    "isDeletedNote" to note.isDeletedNote
-                )
-                try {
-                    firestore.collection("users")
-                        .document(userId)
-                        .collection("notes")
-                        .document(note.id)
-                        .set(noteData)
-                        .await()
-                    noteDao.markNoteAsSynced(note.id)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
+    suspend fun refreshNotesFromBackend() {
+        val response = notesApi.getNotes()
+
+        val remoteNotes = response.notes
+            .orEmpty()
+            .mapNotNull { it.toNoteDb() }
+
+        if (remoteNotes.isNotEmpty()) {
+            noteDao.insertAll(remoteNotes)
         }
     }
 
-    private suspend fun syncFirestoreNotesToRoom(userId: String) {
-        try {
-            val snapshot = firestore.collection("users")
-                .document(userId)
-                .collection("notes")
-                .get()
-                .await()
+    suspend fun createNote(
+        id: String,
+        noteName: String,
+        noteText: String,
+        noteColor: String
+    ): NoteDb {
+        val response = notesApi.createNote(
+            CreateNoteRequest(
+                id = id,
+                noteName = noteName,
+                noteText = noteText,
+                noteColor = noteColor
+            )
+        )
 
-            if (snapshot != null && !snapshot.isEmpty) {
-                val firestoreNotes = snapshot.documents.mapNotNull { document ->
-                    val firestoreDateUpdate = document.getLong("dateUpdate") ?: 0L
-                    val isDeletedNote = document.getBoolean("isDeletedNote") ?: false
-                    val localNote = noteDao.getNoteById(document.id)
+        val note = response.note?.toNoteDb()
+            ?: throw IllegalStateException("Invalid create note response")
 
-                    if (isDeletedNote) {
-                        // Если заметка удалена в Firestore
-                        if (localNote == null || firestoreDateUpdate > (localNote.dateUpdate
-                                ?: 0)
-                        ) {
-                            // Если локальной версии нет или она устарела, удаляем её
-                            noteDao.deleteNoteById(document.id)
-                            null
-                        } else {
-                            null
-                        }
-                    } else {
-                        // Если заметка не удалена
-                        if (localNote == null || firestoreDateUpdate > (localNote.dateUpdate
-                                ?: 0)
-                        ) {
-                            // Возвращаем обновлённую или новую заметку
-                            NoteDb(
-                                id = document.id,
-                                userOwnerId = userId,
-                                noteName = document.getString("noteName"),
-                                noteText = document.getString("noteText"),
-                                dateCreate = document.getLong("dateCreate"),
-                                dateUpdate = firestoreDateUpdate,
-                                noteColor = document.getString("noteColor"),
-                                isSyncedNote = true,
-                                isDeletedNote = false
-                            )
-                        } else {
-                            null // Если локальная версия новее, ничего не делаем
-                        }
-                    }
-                }
+        noteDao.upsertNote(note)
 
-                // Сохраняем обновленные или новые заметки в Room
-                if (firestoreNotes.isNotEmpty()) {
-                    noteDao.insertAll(firestoreNotes)
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        return note
     }
 
-    suspend fun syncNotes(userId: String) {
-        syncLocalNotesToFirestore(userId)
-        syncFirestoreNotesToRoom(userId)
+    suspend fun updateNote(
+        id: String,
+        noteName: String,
+        noteText: String,
+        noteColor: String
+    ): NoteDb {
+        val response = notesApi.updateNote(
+            id = id,
+            request = UpdateNoteRequest(
+                noteName = noteName,
+                noteText = noteText,
+                noteColor = noteColor
+            )
+        )
+
+        val note = response.note?.toNoteDb()
+            ?: throw IllegalStateException("Invalid update note response")
+
+        noteDao.upsertNote(note)
+
+        return note
+    }
+
+    suspend fun deleteNoteFromBackend(id: String) {
+        notesApi.deleteNote(id)
+        noteDao.deleteNoteById(id)
+    }
+
+    suspend fun syncNotes() {
+        refreshNotesFromBackend()
     }
 }

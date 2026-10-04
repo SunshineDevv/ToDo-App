@@ -2,15 +2,15 @@ package com.example.todoapp.presentation.note.list
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.todoapp.data.local.database.entity.NoteDb
-import com.example.todoapp.data.legacy.repository.NoteRepository
 import com.example.todoapp.core.extensions.observeLiveData
 import com.example.todoapp.core.extensions.toNoteDbModel
 import com.example.todoapp.core.extensions.toNoteModelList
-import com.example.todoapp.presentation.note.state.NoteState
+import com.example.todoapp.core.result.AppResult
+import com.example.todoapp.data.local.database.entity.NoteDb
+import com.example.todoapp.data.legacy.repository.NoteRepository
+import com.example.todoapp.domain.auth.usecase.GetCurrentUserUseCase
 import com.example.todoapp.presentation.note.detail.NoteModel
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import com.example.todoapp.presentation.note.state.NoteState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,10 +21,10 @@ import javax.inject.Inject
 @HiltViewModel
 class NoteListViewModel @Inject constructor(
     private val repository: NoteRepository,
+    private val getCurrentUserUseCase: GetCurrentUserUseCase
 ) : ViewModel() {
 
-    private val firebaseAuth = FirebaseAuth.getInstance()
-    private val firestore = FirebaseFirestore.getInstance()
+    private var currentUserId: String? = null
 
     private val _notes = MutableStateFlow<List<NoteModel>>(emptyList())
     val notes = _notes.asStateFlow()
@@ -36,31 +36,50 @@ class NoteListViewModel @Inject constructor(
     val isSelectionMode = _isSelectionMode.asStateFlow()
 
     fun onStart() {
-        firebaseAuth.currentUser?.uid?.let { userId ->
-            observeLiveData(repository.getUserNotes(userId), ::handleNotesChanged)
+        viewModelScope.launch {
+            when (val result = getCurrentUserUseCase()) {
+                is AppResult.Success -> {
+                    val userId = result.data.id
+                    currentUserId = userId
+
+                    observeLiveData(
+                        repository.getUserNotes(userId),
+                        ::handleNotesChanged
+                    )
+
+                    refreshNotesFromBackend()
+                }
+
+                is AppResult.Failure -> {
+                    _Note_state.value = NoteState.Error("Failed to load current user.")
+                }
+            }
+        }
+    }
+
+    fun refreshNotesFromBackend() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                repository.refreshNotesFromBackend()
+            } catch (e: Exception) {
+                _Note_state.value = NoteState.Error("Failed to load notes: ${e.message}")
+            }
         }
     }
 
     fun syncNotesToFirestore() {
-        val userId = firebaseAuth.currentUser?.uid
-        if (userId != null) {
-            viewModelScope.launch {
-                try {
-                    repository.syncNotes(userId)
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-        }
+        refreshNotesFromBackend()
     }
 
     private fun handleNotesChanged(noteDbs: List<NoteDb>) {
         val sortedList = noteDbs.sortedByDescending {
             it.dateUpdate ?: it.dateCreate
         }
-        val filteredList = sortedList.filter {
-            !it.isDeletedNote
-        }.toNoteModelList()
+
+        val filteredList = sortedList
+            .filter { !it.isDeletedNote }
+            .toNoteModelList()
+
         _notes.value = filteredList
     }
 
@@ -72,41 +91,25 @@ class NoteListViewModel @Inject constructor(
                 it
             }
         }
-        _notes.value = updatedNotes ?: emptyList()
+
+        _notes.value = updatedNotes
     }
 
     fun deleteNote(noteList: List<NoteModel>) {
-        noteList.forEach { note ->
-            val updatedNoteDb = note.toNoteDbModel().copy(
-                isDeletedNote = true,
-                dateUpdate = System.currentTimeMillis()
-            )
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                noteList.forEach { note ->
+                    repository.deleteNoteFromBackend(note.id)
+                }
 
-            viewModelScope.launch(Dispatchers.IO) {
-                repository.upsert(updatedNoteDb)
+                _Note_state.value = if (noteList.size == 1) {
+                    NoteState.Success("Note was deleted!")
+                } else {
+                    NoteState.Success("Notes were deleted!")
+                }
+            } catch (e: Exception) {
+                _Note_state.value = NoteState.Error("Failed to delete note: ${e.message}")
             }
-
-            val noteData = mapOf(
-                "isDeletedNote" to true,
-                "dateUpdate" to System.currentTimeMillis()
-            )
-            firestore.collection("users")
-                .document(note.userOwnerId.toString())
-                .collection("notes")
-                .document(note.id)
-                .update(noteData)
-                .addOnSuccessListener {
-//                    _state.value = State.Success("Note marked as deleted in Firestore!")
-                }
-                .addOnFailureListener {
-//                    _state.value = State.Error("Failed to mark note as deleted: ${it.message}")
-                }
-        }
-
-        _Note_state.value = if (noteList.size == 1) {
-            NoteState.Success("Note was deleted!")
-        } else {
-            NoteState.Success("Notes were deleted!")
         }
     }
 

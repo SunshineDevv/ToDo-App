@@ -27,7 +27,6 @@ import androidx.window.layout.WindowMetricsCalculator
 import com.example.todoapp.R
 import com.example.todoapp.databinding.FragmentNoteBinding
 import com.example.todoapp.presentation.note.state.NoteState
-import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -62,19 +61,18 @@ class NoteFragment : Fragment() {
 
         binding?.addNewNoteButton?.setOnClickListener {
             val noteId = UUID.randomUUID().toString()
-
-            val dateCreateNote = System.currentTimeMillis()
-
             val nameNote = binding?.nameEditText?.text.toString()
             val textNote = binding?.textNoteEditText?.text.toString()
 
             val resourceName = getResourceName()
 
-            val userOwnerId = FirebaseAuth.getInstance().currentUser?.uid
-
-            if (resourceName != null && userOwnerId != null) {
-                noteViewModel.addNote(noteId, userOwnerId, nameNote, textNote, dateCreateNote, 0, resourceName)
-                noteViewModel.addNoteToFirestore(noteId, userOwnerId, nameNote, textNote, dateCreateNote, 0, resourceName)
+            if (resourceName != null) {
+                noteViewModel.addNote(
+                    noteId = noteId,
+                    nameNote = nameNote,
+                    textNote = textNote,
+                    noteColor = resourceName
+                )
             }
             findNavController().navigate(R.id.navigate_noteFragment_to_listFragment)
         }
