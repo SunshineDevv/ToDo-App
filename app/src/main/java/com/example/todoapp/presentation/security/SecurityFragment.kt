@@ -15,7 +15,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.example.todoapp.databinding.FragmentSecurityBinding
-import com.example.todoapp.domain.security.service.UnifiedOtpManager
+import com.example.todoapp.domain.security.service.OtpQrCodeGenerator
 import com.example.todoapp.presentation.security.state.SecurityState
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
@@ -31,7 +31,7 @@ class SecurityFragment : Fragment() {
 
     private var currentMfaStatus: Boolean? = null
     @Inject
-    lateinit var otpManager: UnifiedOtpManager
+    lateinit var qrCodeGenerator: OtpQrCodeGenerator
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -58,6 +58,12 @@ class SecurityFragment : Fragment() {
 
         hideMfaSetupData()
         updateMfaStatusUi(null)
+    }
+
+    private fun setMfaActionsEnabled(isEnabled: Boolean) {
+        binding?.beginMfaSetupButton?.isEnabled = isEnabled
+        binding?.confirmMfaSetupButton?.isEnabled = isEnabled
+        binding?.disableMfaButton?.isEnabled = isEnabled
     }
 
     private fun setupClickListeners() {
@@ -158,16 +164,19 @@ class SecurityFragment : Fragment() {
                 .collectLatest { securityState ->
                     when (securityState) {
                         is SecurityState.Empty -> {
+                            setMfaActionsEnabled(true)
                             if (currentMfaStatus != null) {
                                 hideProgress()
                             }
                         }
 
                         is SecurityState.Loading -> {
+                            setMfaActionsEnabled(false)
                             showProgress()
                         }
 
                         is SecurityState.MfaSetupStarted -> {
+                            setMfaActionsEnabled(true)
                             hideProgress()
 
                             showMfaSetupData(
@@ -188,6 +197,7 @@ class SecurityFragment : Fragment() {
                         }
 
                         is SecurityState.Success -> {
+                            setMfaActionsEnabled(true)
                             hideProgress()
                             clearInputFields()
                             hideMfaSetupData()
@@ -203,6 +213,7 @@ class SecurityFragment : Fragment() {
                         }
 
                         is SecurityState.Error -> {
+                            setMfaActionsEnabled(true)
                             hideProgress()
 
                             Toast.makeText(
@@ -264,7 +275,7 @@ class SecurityFragment : Fragment() {
         }
 
         binding?.qrCodeImageView?.setImageBitmap(
-            otpManager.generateQrCode(normalizedOtpUri)
+            qrCodeGenerator.generateQrCode(normalizedOtpUri)
         )
 
         binding?.qrCodeImageView?.setOnClickListener {

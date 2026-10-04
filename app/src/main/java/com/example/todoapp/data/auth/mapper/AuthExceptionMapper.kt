@@ -2,6 +2,7 @@ package com.example.todoapp.data.auth.mapper
 
 import com.example.todoapp.domain.auth.model.AuthError
 import retrofit2.HttpException
+import org.json.JSONObject
 import java.io.IOException
 
 object AuthExceptionMapper {
@@ -129,7 +130,17 @@ object AuthExceptionMapper {
 
             is HttpException -> {
                 when (throwable.code()) {
-                    400 -> AuthError.InvalidMfaCode
+                    400 -> {
+                        when (extractBackendErrorCode(throwable)) {
+                            "MFA_CODE_INVALID",
+                            "MFA_CODE_REPLAYED" -> AuthError.InvalidMfaCode
+
+                            "MFA_NOT_CONFIGURED" -> AuthError.MfaNotConfigured
+
+                            else -> AuthError.InvalidMfaCode
+                        }
+                    }
+
                     401, 403 -> AuthError.InvalidMfaChallenge
                     404 -> AuthError.EndpointNotFound
                     429 -> AuthError.TooManyRequests
@@ -148,7 +159,23 @@ object AuthExceptionMapper {
 
             is HttpException -> {
                 when (throwable.code()) {
-                    400 -> AuthError.InvalidPassword
+                    400 -> {
+                        when (extractBackendErrorCode(throwable)) {
+                            "INVALID_CREDENTIALS" -> AuthError.InvalidPassword
+
+                            "MFA_CODE_INVALID",
+                            "MFA_CODE_REPLAYED",
+                            "MFA_CURRENT_CODE_REQUIRED" -> AuthError.InvalidMfaCode
+
+                            "MFA_NOT_CONFIGURED",
+                            "MFA_NOT_ENABLED" -> AuthError.MfaNotConfigured
+
+                            "VALIDATION_ERROR" -> AuthError.InvalidServerResponse
+
+                            else -> AuthError.Unknown("MFA setup failed: HTTP 400")
+                        }
+                    }
+
                     401, 403 -> AuthError.Unauthorized
                     404 -> AuthError.EndpointNotFound
                     429 -> AuthError.TooManyRequests
@@ -167,7 +194,18 @@ object AuthExceptionMapper {
 
             is HttpException -> {
                 when (throwable.code()) {
-                    400 -> AuthError.InvalidMfaCode
+                    400 -> {
+                        when (extractBackendErrorCode(throwable)) {
+                            "MFA_CODE_INVALID",
+                            "MFA_CODE_REPLAYED" -> AuthError.InvalidMfaCode
+
+                            "MFA_ENROLLMENT_NOT_FOUND",
+                            "MFA_ENROLLMENT_EXPIRED" -> AuthError.MfaSetupExpired
+
+                            else -> AuthError.InvalidMfaCode
+                        }
+                    }
+
                     401, 403 -> AuthError.Unauthorized
                     404 -> AuthError.MfaSetupExpired
                     429 -> AuthError.TooManyRequests
@@ -186,7 +224,20 @@ object AuthExceptionMapper {
 
             is HttpException -> {
                 when (throwable.code()) {
-                    400 -> AuthError.InvalidMfaCode
+                    400 -> {
+                        when (extractBackendErrorCode(throwable)) {
+                            "INVALID_CREDENTIALS" -> AuthError.InvalidPassword
+
+                            "MFA_CODE_INVALID",
+                            "MFA_CODE_REPLAYED" -> AuthError.InvalidMfaCode
+
+                            "MFA_NOT_CONFIGURED",
+                            "MFA_NOT_ENABLED" -> AuthError.MfaNotConfigured
+
+                            else -> AuthError.InvalidMfaCode
+                        }
+                    }
+
                     401, 403 -> AuthError.Unauthorized
                     404 -> AuthError.MfaNotConfigured
                     429 -> AuthError.TooManyRequests
@@ -197,5 +248,16 @@ object AuthExceptionMapper {
 
             else -> AuthError.Unknown(throwable.message)
         }
+    }
+
+    private fun extractBackendErrorCode(exception: HttpException): String? {
+        val rawBody = exception.response()?.errorBody()?.string() ?: return null
+
+        return runCatching {
+            JSONObject(rawBody)
+                .optJSONObject("error")
+                ?.optString("code")
+                ?.takeIf { it.isNotBlank() }
+        }.getOrNull()
     }
 }

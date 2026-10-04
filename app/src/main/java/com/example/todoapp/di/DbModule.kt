@@ -5,7 +5,6 @@ import androidx.room.Room
 import com.example.todoapp.data.local.database.AppDatabase
 import com.example.todoapp.data.local.database.dao.NoteDao
 import com.example.todoapp.data.local.database.dao.UserDao
-import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -35,11 +34,5 @@ class DbModule {
     @Provides
     fun provideUserDao(database: AppDatabase): UserDao {
         return database.getUserDao()
-    }
-
-    @Provides
-    @Singleton
-    fun provideFirestore(): FirebaseFirestore {
-        return FirebaseFirestore.getInstance()
     }
 }

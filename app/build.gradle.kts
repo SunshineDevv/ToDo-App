@@ -5,8 +5,6 @@ plugins {
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.org.jetbrains.kotlin.kapt)
     id("com.google.dagger.hilt.android")
-    id("com.google.gms.google-services")
-    id("com.google.firebase.crashlytics")
     id("androidx.navigation.safeargs.kotlin")
 }
 
@@ -97,12 +95,6 @@ android {
 
         implementation(libs.hilt.android)
         kapt(libs.hilt.android.compiler)
-
-        implementation(platform(libs.firebase.bom))
-        implementation(libs.firebase.crashlytics)
-        implementation(libs.firebase.analytics)
-        implementation(libs.firebase.auth)
-        implementation(libs.firebase.firestore)
 
         implementation(libs.material3.window)
 
