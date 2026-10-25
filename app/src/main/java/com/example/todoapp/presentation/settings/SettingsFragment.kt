@@ -19,16 +19,46 @@ class SettingsFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        binding = FragmentSettingsBinding.inflate(inflater, container, false)
-        return binding?.root
+    ): View {
+
+        binding =
+            FragmentSettingsBinding.inflate(
+                inflater,
+                container,
+                false
+            )
+
+        return requireNotNull(binding).root
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?
+    ) {
+        super.onViewCreated(
+            view,
+            savedInstanceState
+        )
 
-        binding?.buttonSecurity?.setOnClickListener {
-            findNavController().navigate(R.id.navigate_settingsFragment_to_securityFragment)
-        }
+        binding?.buttonSecurity
+            ?.setOnClickListener {
+
+                findNavController().navigate(
+                    R.id.navigate_settingsFragment_to_securityFragment
+                )
+            }
+
+        binding?.buttonTrustedDevice
+            ?.setOnClickListener {
+
+                findNavController().navigate(
+                    R.id.navigate_settingsFragment_to_trustedDeviceFragment
+                )
+            }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        binding = null
     }
 }

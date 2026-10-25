@@ -5,6 +5,7 @@ import com.example.todoapp.data.auth.remote.api.AuthBackendApi
 import com.example.todoapp.data.auth.remote.interceptor.AuthInterceptor
 import com.example.todoapp.data.auth.remote.interceptor.TokenAuthenticator
 import com.example.todoapp.data.note.remote.api.NotesBackendApi
+import com.example.todoapp.data.device.remote.api.TrustedDeviceApi
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import dagger.Module
@@ -101,5 +102,13 @@ object NetworkModule {
         @AuthenticatedRetrofit retrofit: Retrofit
     ): NotesBackendApi {
         return retrofit.create(NotesBackendApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideTrustedDeviceApi(
+        @AuthenticatedRetrofit retrofit: Retrofit
+    ): TrustedDeviceApi {
+        return retrofit.create(TrustedDeviceApi::class.java)
     }
 }

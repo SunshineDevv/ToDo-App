@@ -20,6 +20,8 @@ import com.example.todoapp.data.auth.remote.dto.MfaSetupBeginRequest
 import com.example.todoapp.data.auth.remote.dto.MfaSetupBeginResponse
 import com.example.todoapp.data.auth.remote.dto.MfaSetupConfirmRequest
 import com.example.todoapp.data.auth.remote.dto.MfaStatusResponse
+import com.example.todoapp.data.auth.remote.dto.RefreshChallengeRequest
+import com.example.todoapp.data.device.remote.dto.DeviceChallengeResponse
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -34,6 +36,9 @@ interface AuthBackendApi {
 
     @POST("api/auth/login")
     suspend fun login(@Body request: LoginRequest): LoginResponse
+
+    @POST("api/auth/refresh/challenge")
+    suspend fun createRefreshChallenge(@Body request: RefreshChallengeRequest): DeviceChallengeResponse
 
     @POST("api/auth/refresh")
     suspend fun refresh(@Body request: RefreshRequest): RefreshResponse

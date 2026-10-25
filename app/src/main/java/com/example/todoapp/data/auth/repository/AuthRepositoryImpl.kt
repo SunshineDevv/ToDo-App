@@ -30,6 +30,9 @@ import com.example.todoapp.data.auth.remote.dto.MfaSetupConfirmRequest
 import com.example.todoapp.domain.auth.model.MfaSetupData
 import com.example.todoapp.domain.auth.model.MfaStatus
 import kotlinx.coroutines.CancellationException
+import com.example.todoapp.data.auth.remote.refresh.DeviceAwareRefreshManager
+import com.example.todoapp.data.auth.remote.refresh.DeviceBoundRefreshException
+import com.example.todoapp.data.device.local.TrustedDeviceStorage
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -37,7 +40,9 @@ import javax.inject.Singleton
 class AuthRepositoryImpl @Inject constructor(
     @PublicBackendApi private val publicApi: AuthBackendApi,
     @AuthenticatedBackendApi private val authenticatedApi: AuthBackendApi,
-    private val backendTokenStorage: BackendTokenStorage
+    private val backendTokenStorage: BackendTokenStorage,
+    private val deviceAwareRefreshManager: DeviceAwareRefreshManager,
+    private val trustedDeviceStorage: TrustedDeviceStorage
 ) : AuthRepository {
 
     override suspend fun register(
@@ -88,6 +93,7 @@ class AuthRepositoryImpl @Inject constructor(
             } else {
                 if (loginResult is LoginResult.Success) {
                     saveTokens(loginResult.tokens)
+                    trustedDeviceStorage.markUnbound()
                 }
 
                 AppResult.Success(loginResult)
@@ -205,6 +211,7 @@ class AuthRepositoryImpl @Inject constructor(
                 AppResult.Failure(AuthError.InvalidServerResponse)
             } else {
                 saveTokens(loginResult.tokens)
+                trustedDeviceStorage.markUnbound()
 
                 Log.i("BACKEND_MFA", "MFA login completed and tokens saved")
 
@@ -341,6 +348,7 @@ class AuthRepositoryImpl @Inject constructor(
             AppResult.Failure(AuthExceptionMapper.mapLogoutError(e))
         } finally {
             backendTokenStorage.clearTokens()
+            trustedDeviceStorage.markUnbound()
             Log.i("BACKEND_LOGOUT", "local backend tokens cleared")
         }
     }
@@ -349,8 +357,8 @@ class AuthRepositoryImpl @Inject constructor(
         refreshToken: String
     ): AppResult<TokenPair, AuthError> {
         return try {
-            val response = publicApi.refresh(
-                RefreshRequest(refreshToken = refreshToken)
+            val response = deviceAwareRefreshManager.refresh(
+                refreshToken = refreshToken
             )
 
             val tokenPair = response.toTokenPair()
@@ -363,6 +371,14 @@ class AuthRepositoryImpl @Inject constructor(
 
         } catch (e: CancellationException) {
             throw e
+        } catch (e: DeviceBoundRefreshException) {
+            Log.e(
+                "BACKEND_SESSION",
+                "trusted device refresh failed locally: ${e.message}",
+                e
+            )
+
+            AppResult.Failure(AuthError.Unauthorized)
         } catch (e: Exception) {
             AppResult.Failure(AuthExceptionMapper.mapRefreshError(e))
         }

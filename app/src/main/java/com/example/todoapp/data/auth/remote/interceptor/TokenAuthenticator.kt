@@ -1,10 +1,9 @@
 package com.example.todoapp.data.auth.remote.interceptor
 
 import android.util.Log
+import com.example.todoapp.data.auth.remote.refresh.DeviceAwareRefreshManager
+import com.example.todoapp.data.auth.remote.refresh.DeviceBoundRefreshException
 import com.example.todoapp.data.auth.local.BackendTokenStorage
-import com.example.todoapp.di.PublicBackendApi
-import com.example.todoapp.data.auth.remote.api.AuthBackendApi
-import com.example.todoapp.data.auth.remote.dto.RefreshRequest
 import com.example.todoapp.core.session.AuthSessionEventManager
 import kotlinx.coroutines.runBlocking
 import okhttp3.Authenticator
@@ -18,7 +17,7 @@ import javax.inject.Singleton
 
 @Singleton
 class TokenAuthenticator @Inject constructor(
-    @PublicBackendApi private val publicApi: AuthBackendApi,
+    private val deviceAwareRefreshManager: DeviceAwareRefreshManager,
     private val backendTokenStorage: BackendTokenStorage,
     private val authSessionEventManager: AuthSessionEventManager
 ) : Authenticator {
@@ -60,8 +59,8 @@ class TokenAuthenticator @Inject constructor(
 
             return try {
                 val refreshResponse = runBlocking {
-                    publicApi.refresh(
-                        RefreshRequest(refreshToken = refreshToken)
+                    deviceAwareRefreshManager.refresh(
+                        refreshToken = refreshToken
                     )
                 }
 
@@ -97,6 +96,12 @@ class TokenAuthenticator @Inject constructor(
 
             } catch (e: IOException) {
                 Log.e("BACKEND_TOKEN", "refresh failed: connection error", e)
+                null
+
+            } catch (e: DeviceBoundRefreshException) {
+                expireLocalSession(
+                    "trusted device refresh failed locally: ${e.message}"
+                )
                 null
 
             } catch (e: Exception) {

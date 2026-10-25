@@ -127,6 +127,30 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 }
             }
 
+            R.id.trustedDeviceFragment -> {
+                supportActionBar?.apply {
+                    title = "Trusted device"
+
+                    setDisplayHomeAsUpEnabled(true)
+                    setHomeButtonEnabled(true)
+
+                    setHomeAsUpIndicator(
+                        R.drawable.ic_back
+                    )
+                }
+
+                drawerToggle.isDrawerIndicatorEnabled =
+                    false
+
+                binding
+                    ?.toolbar
+                    ?.setNavigationOnClickListener {
+
+                        onBackPressedDispatcher
+                            .onBackPressed()
+                    }
+            }
+
             else -> {
                 supportActionBar?.apply {
                     title = "MyNotes"

@@ -70,14 +70,23 @@
         android:id="@+id/settingsFragment"
         android:name="com.example.todoapp.presentation.settings.SettingsFragment"
         android:label="fragment_settings"
-        tools:layout="@layout/fragment_settings" >
+        tools:layout="@layout/fragment_settings">
         <action
             android:id="@+id/navigate_settingsFragment_to_securityFragment"
             app:destination="@id/securityFragment" />
+
+        <action
+            android:id="@+id/navigate_settingsFragment_to_trustedDeviceFragment"
+            app:destination="@id/trustedDeviceFragment" />
     </fragment>
     <fragment
         android:id="@+id/securityFragment"
         android:name="com.example.todoapp.presentation.security.SecurityFragment"
         android:label="fragment_security"
         tools:layout="@layout/fragment_security" />
+    <fragment
+        android:id="@+id/trustedDeviceFragment"
+        android:name="com.example.todoapp.presentation.trusteddevice.TrustedDeviceFragment"
+        android:label="fragment_trusted_device"
+        tools:layout="@layout/fragment_trusted_device" />
 </navigation>

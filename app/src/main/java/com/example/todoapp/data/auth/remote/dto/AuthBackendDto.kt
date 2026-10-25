@@ -15,8 +15,19 @@ data class LoginRequest(
     val password: String
 )
 
-data class RefreshRequest(
+data class DeviceProofRequest(
+    val challengeId: String,
+    val challenge: String,
+    val signature: String
+)
+
+data class RefreshChallengeRequest(
     val refreshToken: String
+)
+
+data class RefreshRequest(
+    val refreshToken: String,
+    val deviceProof: DeviceProofRequest? = null
 )
 
 data class LogoutRequest(
