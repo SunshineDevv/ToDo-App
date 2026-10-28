@@ -113,5 +113,7 @@ android {
         implementation (libs.androidx.security.crypto)
 
         implementation(libs.androidx.core.splashscreen.v120)
+
+        implementation(libs.androidx.biometric)
     }
 }

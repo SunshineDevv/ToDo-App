@@ -1,3 +1,4 @@
+
 package com.example.todoapp.data.auth.repository
 
 import android.util.Log
@@ -10,29 +11,28 @@ import com.example.todoapp.data.auth.remote.api.AuthBackendApi
 import com.example.todoapp.data.auth.remote.dto.ForgotPasswordRequest
 import com.example.todoapp.data.auth.remote.dto.LoginRequest
 import com.example.todoapp.data.auth.remote.dto.LogoutRequest
-import com.example.todoapp.data.auth.remote.dto.RefreshRequest
 import com.example.todoapp.data.auth.remote.dto.RegisterRequest
 import com.example.todoapp.data.auth.remote.dto.ResetPasswordRequest
+import com.example.todoapp.data.auth.remote.dto.VerifyMfaLoginRequest
+import com.example.todoapp.data.auth.remote.dto.MfaDisableRequest
+import com.example.todoapp.data.auth.remote.dto.MfaSetupBeginRequest
+import com.example.todoapp.data.auth.remote.dto.MfaSetupConfirmRequest
+import com.example.todoapp.data.auth.remote.refresh.DeviceAwareRefreshManager
+import com.example.todoapp.data.auth.remote.refresh.DeviceBoundRefreshException
+import com.example.todoapp.data.device.local.TrustedDeviceStorage
 import com.example.todoapp.di.AuthenticatedBackendApi
 import com.example.todoapp.di.PublicBackendApi
 import com.example.todoapp.domain.auth.model.AuthError
 import com.example.todoapp.domain.auth.model.AuthUser
 import com.example.todoapp.domain.auth.model.ForgotPasswordResult
 import com.example.todoapp.domain.auth.model.LoginResult
+import com.example.todoapp.domain.auth.model.MfaSetupData
+import com.example.todoapp.domain.auth.model.MfaStatus
 import com.example.todoapp.domain.auth.model.ResetPasswordResult
 import com.example.todoapp.domain.auth.model.RestoreSessionResult
 import com.example.todoapp.domain.auth.model.TokenPair
 import com.example.todoapp.domain.auth.repository.AuthRepository
-import com.example.todoapp.data.auth.remote.dto.VerifyMfaLoginRequest
-import com.example.todoapp.data.auth.remote.dto.MfaDisableRequest
-import com.example.todoapp.data.auth.remote.dto.MfaSetupBeginRequest
-import com.example.todoapp.data.auth.remote.dto.MfaSetupConfirmRequest
-import com.example.todoapp.domain.auth.model.MfaSetupData
-import com.example.todoapp.domain.auth.model.MfaStatus
 import kotlinx.coroutines.CancellationException
-import com.example.todoapp.data.auth.remote.refresh.DeviceAwareRefreshManager
-import com.example.todoapp.data.auth.remote.refresh.DeviceBoundRefreshException
-import com.example.todoapp.data.device.local.TrustedDeviceStorage
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -45,28 +45,11 @@ class AuthRepositoryImpl @Inject constructor(
     private val trustedDeviceStorage: TrustedDeviceStorage
 ) : AuthRepository {
 
-    override suspend fun register(
-        email: String,
-        password: String,
-        name: String
-    ): AppResult<AuthUser, AuthError> {
+    override suspend fun register(email: String, password: String, name: String): AppResult<AuthUser, AuthError> {
         return try {
-            val response = publicApi.register(
-                RegisterRequest(
-                    email = email,
-                    password = password,
-                    name = name
-                )
-            )
-
+            val response = publicApi.register(RegisterRequest(email = email, password = password, name = name))
             val user = response.user?.toDomain()
-
-            if (user == null) {
-                AppResult.Failure(AuthError.InvalidServerResponse)
-            } else {
-                AppResult.Success(user)
-            }
-
+            if (user == null) AppResult.Failure(AuthError.InvalidServerResponse) else AppResult.Success(user)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -74,31 +57,20 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun login(
-        email: String,
-        password: String
-    ): AppResult<LoginResult, AuthError> {
+    override suspend fun login(email: String, password: String): AppResult<LoginResult, AuthError> {
         return try {
-            val response = publicApi.login(
-                LoginRequest(
-                    email = email,
-                    password = password
-                )
-            )
-
+            val response = publicApi.login(LoginRequest(email = email, password = password))
             val loginResult = response.toDomain()
 
             if (loginResult == null) {
                 AppResult.Failure(AuthError.InvalidServerResponse)
             } else {
                 if (loginResult is LoginResult.Success) {
+                    trustedDeviceStorage.beginSession(loginResult.user.id)
                     saveTokens(loginResult.tokens)
-                    trustedDeviceStorage.markUnbound()
                 }
-
                 AppResult.Success(loginResult)
             }
-
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -106,16 +78,10 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun forgotPassword(
-        email: String
-    ): AppResult<ForgotPasswordResult, AuthError> {
+    override suspend fun forgotPassword(email: String): AppResult<ForgotPasswordResult, AuthError> {
         return try {
-            val response = publicApi.forgotPassword(
-                ForgotPasswordRequest(email = email)
-            )
-
+            val response = publicApi.forgotPassword(ForgotPasswordRequest(email = email))
             AppResult.Success(response.toDomain())
-
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -123,20 +89,10 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun resetPassword(
-        token: String,
-        newPassword: String
-    ): AppResult<ResetPasswordResult, AuthError> {
+    override suspend fun resetPassword(token: String, newPassword: String): AppResult<ResetPasswordResult, AuthError> {
         return try {
-            val response = publicApi.resetPassword(
-                ResetPasswordRequest(
-                    token = token,
-                    newPassword = newPassword
-                )
-            )
-
+            val response = publicApi.resetPassword(ResetPasswordRequest(token = token, newPassword = newPassword))
             AppResult.Success(response.toDomain())
-
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -149,6 +105,7 @@ class AuthRepositoryImpl @Inject constructor(
 
         if (oldRefreshToken.isNullOrBlank()) {
             backendTokenStorage.clearTokens()
+            trustedDeviceStorage.clearSession()
             Log.i("BACKEND_SESSION", "refresh token is missing")
             return RestoreSessionResult.Unauthenticated
         }
@@ -156,68 +113,49 @@ class AuthRepositoryImpl @Inject constructor(
         return when (val result = refreshTokens(oldRefreshToken)) {
             is AppResult.Success -> {
                 saveTokens(result.data)
-
                 Log.i("BACKEND_SESSION", "session restored successfully")
                 RestoreSessionResult.Authenticated
             }
-
-            is AppResult.Failure -> {
-                when (result.error) {
-                    AuthError.Unauthorized -> {
-                        backendTokenStorage.clearTokens()
-                        Log.e("BACKEND_SESSION", "refresh token rejected")
-                        RestoreSessionResult.Unauthenticated
-                    }
-
-                    AuthError.NetworkUnavailable -> {
-                        Log.e("BACKEND_SESSION", "session restore failed: connection error")
-                        RestoreSessionResult.NetworkUnavailable
-                    }
-
-                    AuthError.ServerUnavailable -> {
-                        Log.e("BACKEND_SESSION", "authentication server unavailable")
-                        RestoreSessionResult.ServerUnavailable
-                    }
-
-                    AuthError.InvalidServerResponse -> {
-                        Log.e("BACKEND_SESSION", "refresh response is invalid")
-                        RestoreSessionResult.ServerUnavailable
-                    }
-
-                    else -> {
-                        Log.e("BACKEND_SESSION", "session restore failed")
-                        RestoreSessionResult.ServerUnavailable
-                    }
+            is AppResult.Failure -> when (result.error) {
+                AuthError.Unauthorized -> {
+                    backendTokenStorage.clearTokens()
+                    trustedDeviceStorage.clearSession()
+                    Log.e("BACKEND_SESSION", "refresh token rejected")
+                    RestoreSessionResult.Unauthenticated
+                }
+                AuthError.NetworkUnavailable -> {
+                    Log.e("BACKEND_SESSION", "session restore failed: connection error")
+                    RestoreSessionResult.NetworkUnavailable
+                }
+                AuthError.ServerUnavailable -> {
+                    Log.e("BACKEND_SESSION", "authentication server unavailable")
+                    RestoreSessionResult.ServerUnavailable
+                }
+                AuthError.InvalidServerResponse -> {
+                    Log.e("BACKEND_SESSION", "refresh response is invalid")
+                    RestoreSessionResult.ServerUnavailable
+                }
+                else -> {
+                    Log.e("BACKEND_SESSION", "session restore failed")
+                    RestoreSessionResult.ServerUnavailable
                 }
             }
         }
     }
 
-    override suspend fun verifyMfaLogin(
-        loginTicket: String,
-        code: String
-    ): AppResult<LoginResult.Success, AuthError> {
+    override suspend fun verifyMfaLogin(loginTicket: String, code: String): AppResult<LoginResult.Success, AuthError> {
         return try {
-            val response = publicApi.verifyMfaLogin(
-                VerifyMfaLoginRequest(
-                    loginTicket = loginTicket,
-                    code = code
-                )
-            )
-
+            val response = publicApi.verifyMfaLogin(VerifyMfaLoginRequest(loginTicket = loginTicket, code = code))
             val loginResult = response.toDomain()
 
             if (loginResult == null) {
                 AppResult.Failure(AuthError.InvalidServerResponse)
             } else {
+                trustedDeviceStorage.beginSession(loginResult.user.id)
                 saveTokens(loginResult.tokens)
-                trustedDeviceStorage.markUnbound()
-
                 Log.i("BACKEND_MFA", "MFA login completed and tokens saved")
-
                 AppResult.Success(loginResult)
             }
-
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -225,27 +163,13 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun beginMfaSetup(
-        password: String,
-        algorithm: String,
-        currentCode: String?
-    ): AppResult<MfaSetupData, AuthError> {
+    override suspend fun beginMfaSetup(password: String, algorithm: String, currentCode: String?): AppResult<MfaSetupData, AuthError> {
         return try {
             val response = authenticatedApi.beginMfaSetup(
-                MfaSetupBeginRequest(
-                    password = password,
-                    currentCode = currentCode,
-                    algorithm = algorithm
-                )
+                MfaSetupBeginRequest(password = password, currentCode = currentCode, algorithm = algorithm)
             )
-
             val setupData = response.toDomain()
-
-            if (setupData == null) {
-                AppResult.Failure(AuthError.InvalidServerResponse)
-            } else {
-                AppResult.Success(setupData)
-            }
+            if (setupData == null) AppResult.Failure(AuthError.InvalidServerResponse) else AppResult.Success(setupData)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -253,22 +177,11 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun confirmMfaSetup(
-        code: String
-    ): AppResult<MfaStatus, AuthError> {
+    override suspend fun confirmMfaSetup(code: String): AppResult<MfaStatus, AuthError> {
         return try {
-            val response = authenticatedApi.confirmMfaSetup(
-                MfaSetupConfirmRequest(code = code)
-            )
-
+            val response = authenticatedApi.confirmMfaSetup(MfaSetupConfirmRequest(code = code))
             val status = response.toDomain()
-
-            if (status == null) {
-                AppResult.Failure(AuthError.InvalidServerResponse)
-            } else {
-                AppResult.Success(status)
-            }
-
+            if (status == null) AppResult.Failure(AuthError.InvalidServerResponse) else AppResult.Success(status)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -276,26 +189,11 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun disableMfa(
-        password: String,
-        code: String
-    ): AppResult<MfaStatus, AuthError> {
+    override suspend fun disableMfa(password: String, code: String): AppResult<MfaStatus, AuthError> {
         return try {
-            val response = authenticatedApi.disableMfa(
-                MfaDisableRequest(
-                    password = password,
-                    code = code
-                )
-            )
-
+            val response = authenticatedApi.disableMfa(MfaDisableRequest(password = password, code = code))
             val status = response.toDomain()
-
-            if (status == null) {
-                AppResult.Failure(AuthError.InvalidServerResponse)
-            } else {
-                AppResult.Success(status)
-            }
-
+            if (status == null) AppResult.Failure(AuthError.InvalidServerResponse) else AppResult.Success(status)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -306,15 +204,8 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun getCurrentUser(): AppResult<AuthUser, AuthError> {
         return try {
             val response = authenticatedApi.getCurrentUser()
-
             val user = response.user?.toDomain()
-
-            if (user == null) {
-                AppResult.Failure(AuthError.InvalidServerResponse)
-            } else {
-                AppResult.Success(user)
-            }
-
+            if (user == null) AppResult.Failure(AuthError.InvalidServerResponse) else AppResult.Success(user)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -327,20 +218,12 @@ class AuthRepositoryImpl @Inject constructor(
 
         return try {
             if (!refreshToken.isNullOrBlank()) {
-                publicApi.logout(
-                    LogoutRequest(refreshToken = refreshToken)
-                )
-
+                publicApi.logout(LogoutRequest(refreshToken = refreshToken))
                 Log.i("BACKEND_LOGOUT", "backend logout request completed")
             } else {
-                Log.i(
-                    "BACKEND_LOGOUT",
-                    "refreshToken is empty, only local tokens will be cleared"
-                )
+                Log.i("BACKEND_LOGOUT", "refreshToken is empty, only local tokens will be cleared")
             }
-
             AppResult.Success(Unit)
-
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -348,36 +231,20 @@ class AuthRepositoryImpl @Inject constructor(
             AppResult.Failure(AuthExceptionMapper.mapLogoutError(e))
         } finally {
             backendTokenStorage.clearTokens()
-            trustedDeviceStorage.markUnbound()
+            trustedDeviceStorage.clearSession()
             Log.i("BACKEND_LOGOUT", "local backend tokens cleared")
         }
     }
 
-    private suspend fun refreshTokens(
-        refreshToken: String
-    ): AppResult<TokenPair, AuthError> {
+    private suspend fun refreshTokens(refreshToken: String): AppResult<TokenPair, AuthError> {
         return try {
-            val response = deviceAwareRefreshManager.refresh(
-                refreshToken = refreshToken
-            )
-
+            val response = deviceAwareRefreshManager.refresh(refreshToken = refreshToken)
             val tokenPair = response.toTokenPair()
-
-            if (tokenPair == null) {
-                AppResult.Failure(AuthError.InvalidServerResponse)
-            } else {
-                AppResult.Success(tokenPair)
-            }
-
+            if (tokenPair == null) AppResult.Failure(AuthError.InvalidServerResponse) else AppResult.Success(tokenPair)
         } catch (e: CancellationException) {
             throw e
         } catch (e: DeviceBoundRefreshException) {
-            Log.e(
-                "BACKEND_SESSION",
-                "trusted device refresh failed locally: ${e.message}",
-                e
-            )
-
+            Log.e("BACKEND_SESSION", "trusted device refresh failed locally: ${e.message}", e)
             AppResult.Failure(AuthError.Unauthorized)
         } catch (e: Exception) {
             AppResult.Failure(AuthExceptionMapper.mapRefreshError(e))
@@ -385,9 +252,6 @@ class AuthRepositoryImpl @Inject constructor(
     }
 
     private fun saveTokens(tokens: TokenPair) {
-        backendTokenStorage.saveTokens(
-            accessToken = tokens.accessToken,
-            refreshToken = tokens.refreshToken
-        )
+        backendTokenStorage.saveTokens(accessToken = tokens.accessToken, refreshToken = tokens.refreshToken)
     }
 }

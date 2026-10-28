@@ -22,11 +22,7 @@ class GetTrustedDeviceStateUseCase @Inject constructor(
         ) {
 
             is AppResult.Success -> {
-
-                trustedDeviceRepository
-                    .getStateForUser(
-                        currentUser.data.id
-                    )
+                trustedDeviceRepository.getStateForUser(currentUser.data.id)
             }
 
             is AppResult.Failure -> {

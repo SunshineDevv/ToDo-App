@@ -78,6 +78,9 @@
         <action
             android:id="@+id/navigate_settingsFragment_to_trustedDeviceFragment"
             app:destination="@id/trustedDeviceFragment" />
+        <action
+            android:id="@+id/navigate_settingsFragment_to_biometricLockFragment"
+            app:destination="@id/biometricLockFragment" />
     </fragment>
     <fragment
         android:id="@+id/securityFragment"
@@ -89,4 +92,9 @@
         android:name="com.example.todoapp.presentation.trusteddevice.TrustedDeviceFragment"
         android:label="fragment_trusted_device"
         tools:layout="@layout/fragment_trusted_device" />
+    <fragment
+        android:id="@+id/biometricLockFragment"
+        android:name="com.example.todoapp.presentation.biometric.BiometricLockFragment"
+        android:label="fragment_biometric_lock"
+        tools:layout="@layout/fragment_biometric_lock" />
 </navigation>

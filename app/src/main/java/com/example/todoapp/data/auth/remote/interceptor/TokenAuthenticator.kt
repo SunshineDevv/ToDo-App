@@ -1,10 +1,12 @@
+
 package com.example.todoapp.data.auth.remote.interceptor
 
 import android.util.Log
+import com.example.todoapp.core.session.AuthSessionEventManager
+import com.example.todoapp.data.auth.local.BackendTokenStorage
 import com.example.todoapp.data.auth.remote.refresh.DeviceAwareRefreshManager
 import com.example.todoapp.data.auth.remote.refresh.DeviceBoundRefreshException
-import com.example.todoapp.data.auth.local.BackendTokenStorage
-import com.example.todoapp.core.session.AuthSessionEventManager
+import com.example.todoapp.data.device.local.TrustedDeviceStorage
 import kotlinx.coroutines.runBlocking
 import okhttp3.Authenticator
 import okhttp3.Request
@@ -19,35 +21,24 @@ import javax.inject.Singleton
 class TokenAuthenticator @Inject constructor(
     private val deviceAwareRefreshManager: DeviceAwareRefreshManager,
     private val backendTokenStorage: BackendTokenStorage,
+    private val trustedDeviceStorage: TrustedDeviceStorage,
     private val authSessionEventManager: AuthSessionEventManager
 ) : Authenticator {
 
-    override fun authenticate(
-        route: Route?,
-        response: Response
-    ): Request? {
+    override fun authenticate(route: Route?, response: Response): Request? {
         if (responseCount(response) >= MAX_AUTH_RETRY_COUNT) {
             Log.e("BACKEND_TOKEN", "authentication retry limit reached")
             return null
         }
 
-        val requestAccessToken = response.request.header("Authorization")
-            ?.removePrefix("Bearer ")
-            ?.trim()
+        val requestAccessToken = response.request.header("Authorization")?.removePrefix("Bearer ")?.trim()
 
         synchronized(this) {
             val latestAccessToken = backendTokenStorage.getAccessToken()
 
-            if (
-                !latestAccessToken.isNullOrBlank() &&
-                !requestAccessToken.isNullOrBlank() &&
-                latestAccessToken != requestAccessToken
-            ) {
+            if (!latestAccessToken.isNullOrBlank() && !requestAccessToken.isNullOrBlank() && latestAccessToken != requestAccessToken) {
                 Log.i("BACKEND_TOKEN", "access token was already refreshed, retrying request")
-
-                return response.request.newBuilder()
-                    .header("Authorization", "Bearer $latestAccessToken")
-                    .build()
+                return response.request.newBuilder().header("Authorization", "Bearer $latestAccessToken").build()
             }
 
             val refreshToken = backendTokenStorage.getRefreshToken()
@@ -58,12 +49,7 @@ class TokenAuthenticator @Inject constructor(
             }
 
             return try {
-                val refreshResponse = runBlocking {
-                    deviceAwareRefreshManager.refresh(
-                        refreshToken = refreshToken
-                    )
-                }
-
+                val refreshResponse = runBlocking { deviceAwareRefreshManager.refresh(refreshToken) }
                 val newAccessToken = refreshResponse.accessToken
                 val newRefreshToken = refreshResponse.refreshToken
 
@@ -72,38 +58,24 @@ class TokenAuthenticator @Inject constructor(
                     return null
                 }
 
-                backendTokenStorage.saveTokens(
-                    accessToken = newAccessToken,
-                    refreshToken = newRefreshToken
-                )
-
+                backendTokenStorage.saveTokens(accessToken = newAccessToken, refreshToken = newRefreshToken)
                 authSessionEventManager.markAuthenticated()
-
                 Log.i("BACKEND_TOKEN", "tokens refreshed after 401")
 
-                response.request.newBuilder()
-                    .header("Authorization", "Bearer $newAccessToken")
-                    .build()
-
+                response.request.newBuilder().header("Authorization", "Bearer $newAccessToken").build()
             } catch (e: HttpException) {
                 if (e.code() == 401 || e.code() == 403) {
                     expireLocalSession("refresh token rejected: HTTP ${e.code()}")
                 } else {
                     Log.e("BACKEND_TOKEN", "refresh failed: HTTP ${e.code()}", e)
                 }
-
                 null
-
             } catch (e: IOException) {
                 Log.e("BACKEND_TOKEN", "refresh failed: connection error", e)
                 null
-
             } catch (e: DeviceBoundRefreshException) {
-                expireLocalSession(
-                    "trusted device refresh failed locally: ${e.message}"
-                )
+                expireLocalSession("trusted device refresh failed locally: ${e.message}")
                 null
-
             } catch (e: Exception) {
                 Log.e("BACKEND_TOKEN", "unexpected refresh failure: ${e.message}", e)
                 null
@@ -113,6 +85,7 @@ class TokenAuthenticator @Inject constructor(
 
     private fun expireLocalSession(reason: String) {
         backendTokenStorage.clearTokens()
+        trustedDeviceStorage.clearSession()
         authSessionEventManager.notifySessionExpired()
         Log.e("BACKEND_SESSION", "session expired: $reason")
     }
@@ -125,7 +98,6 @@ class TokenAuthenticator @Inject constructor(
             result++
             priorResponse = priorResponse.priorResponse
         }
-
         return result
     }
 

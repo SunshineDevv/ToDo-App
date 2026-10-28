@@ -104,7 +104,9 @@ class AuthActivity : AppCompatActivity(), ActivityUIController {
             try {
                 when (checkAuthStateUseCase()) {
                     RestoreSessionResult.Authenticated -> {
-                        openMainActivity()
+                        openMainActivity(
+                            requireBiometricOnStart = true
+                        )
                     }
 
                     RestoreSessionResult.Unauthenticated -> {
@@ -143,11 +145,11 @@ class AuthActivity : AppCompatActivity(), ActivityUIController {
         }
     }
 
-    private fun openMainActivity() {
+    private fun openMainActivity(requireBiometricOnStart: Boolean = false) {
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-
+                putExtra(MainActivity.EXTRA_REQUIRE_BIOMETRIC_ON_START, requireBiometricOnStart)
+            }
         startActivity(intent)
         finish()
     }

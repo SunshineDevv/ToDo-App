@@ -55,6 +55,14 @@ class SettingsFragment : Fragment() {
                     R.id.navigate_settingsFragment_to_trustedDeviceFragment
                 )
             }
+
+        binding?.buttonBiometricLock
+            ?.setOnClickListener {
+
+                findNavController().navigate(
+                    R.id.navigate_settingsFragment_to_biometricLockFragment
+                )
+            }
     }
 
     override fun onDestroyView() {

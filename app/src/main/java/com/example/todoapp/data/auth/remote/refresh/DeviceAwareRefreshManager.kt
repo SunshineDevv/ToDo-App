@@ -1,3 +1,4 @@
+
 package com.example.todoapp.data.auth.remote.refresh
 
 import com.example.todoapp.data.auth.remote.api.AuthBackendApi
@@ -14,87 +15,33 @@ import javax.inject.Singleton
 
 @Singleton
 class DeviceAwareRefreshManager @Inject constructor(
-    @PublicBackendApi
-    private val publicApi: AuthBackendApi,
+    @PublicBackendApi private val publicApi: AuthBackendApi,
     private val trustedDeviceStorage: TrustedDeviceStorage,
     private val deviceKeyManager: DeviceKeyManager
 ) {
+    suspend fun refresh(refreshToken: String): RefreshResponse {
+        val userId = trustedDeviceStorage.getSessionUserId()
+            ?: throw DeviceBoundRefreshException("Session user is missing")
 
-    suspend fun refresh(
-        refreshToken: String
-    ): RefreshResponse {
-
-        /*
-         * Legacy / unbound session:
-         * сохраняем полностью старое поведение.
-         */
-        if (!trustedDeviceStorage.isDeviceBound()) {
-            return publicApi.refresh(
-                RefreshRequest(
-                    refreshToken = refreshToken
-                )
-            )
+        if (!trustedDeviceStorage.isSessionBound()) {
+            return publicApi.refresh(RefreshRequest(refreshToken = refreshToken))
         }
 
-        /*
-         * Если локально session считается bound,
-         * НИКОГДА не откатываемся на обычный refresh.
-         */
-        val userId = trustedDeviceStorage.getUserId()
-            ?: throw DeviceBoundRefreshException(
-                "Bound session has no stored userId"
-            )
-
-        val deviceId = trustedDeviceStorage.getDeviceId()
-            ?: throw DeviceBoundRefreshException(
-                "Bound session has no stored deviceId"
-            )
-
-        val keyAlias = trustedDeviceStorage.getKeyAlias()
-            ?: throw DeviceBoundRefreshException(
-                "Bound session has no stored key alias"
-            )
+        val deviceId = trustedDeviceStorage.getDeviceId(userId)
+            ?: throw DeviceBoundRefreshException("Bound session has no deviceId")
+        val keyAlias = trustedDeviceStorage.getKeyAlias(userId)
+            ?: throw DeviceBoundRefreshException("Bound session has no key alias")
 
         if (!deviceKeyManager.hasKey(keyAlias)) {
-            throw DeviceBoundRefreshException(
-                "Trusted device private key is missing"
-            )
+            throw DeviceBoundRefreshException("Trusted device private key is missing")
         }
 
-        /*
-         * 1. Получаем одноразовый refresh challenge.
-         */
-        val challenge = publicApi.createRefreshChallenge(
-            RefreshChallengeRequest(
-                refreshToken = refreshToken
-            )
-        )
+        val challenge = publicApi.createRefreshChallenge(RefreshChallengeRequest(refreshToken = refreshToken))
 
-        /*
-         * Не подписываем неожиданный серверный контекст.
-         */
-        if (challenge.purpose != "refresh") {
-            throw DeviceBoundRefreshException(
-                "Unexpected challenge purpose: ${challenge.purpose}"
-            )
+        if (challenge.purpose != "refresh" || challenge.userId != userId || challenge.deviceId != deviceId) {
+            throw DeviceBoundRefreshException("Refresh challenge does not match the current session")
         }
 
-        if (challenge.userId != userId) {
-            throw DeviceBoundRefreshException(
-                "Refresh challenge user mismatch"
-            )
-        }
-
-        if (challenge.deviceId != deviceId) {
-            throw DeviceBoundRefreshException(
-                "Refresh challenge device mismatch"
-            )
-        }
-
-        /*
-         * 2. Строим тот же canonical payload,
-         * который проверяет backend.
-         */
         val payload = DevicePayloadBuilder.build(
             purpose = challenge.purpose,
             challengeId = challenge.challengeId,
@@ -104,17 +51,8 @@ class DeviceAwareRefreshManager @Inject constructor(
             deviceId = challenge.deviceId
         )
 
-        /*
-         * 3. Подписываем приватным ключом Android Keystore.
-         */
-        val signature = deviceKeyManager.signUtf8(
-            alias = keyAlias,
-            payload = payload
-        )
+        val signature = deviceKeyManager.signUtf8(alias = keyAlias, payload = payload)
 
-        /*
-         * 4. Отправляем refresh token + ECDSA proof.
-         */
         return publicApi.refresh(
             RefreshRequest(
                 refreshToken = refreshToken,
@@ -128,6 +66,4 @@ class DeviceAwareRefreshManager @Inject constructor(
     }
 }
 
-class DeviceBoundRefreshException(
-    message: String
-) : IllegalStateException(message)
+class DeviceBoundRefreshException(message: String) : IllegalStateException(message)

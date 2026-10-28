@@ -16,6 +16,11 @@ import androidx.navigation.NavDestination
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.setupWithNavController
+import android.view.View
+import androidx.biometric.BiometricPrompt
+import androidx.drawerlayout.widget.DrawerLayout
+import com.example.todoapp.domain.biometric.repository.BiometricLockRepository
+import com.example.todoapp.presentation.biometric.BiometricPromptManager
 import com.example.todoapp.R
 import com.example.todoapp.databinding.ActivityMainBinding
 import com.example.todoapp.databinding.ItemHeaderNavBinding
@@ -45,17 +50,28 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
     @Inject
     lateinit var authSessionEventManager: AuthSessionEventManager
 
+    @Inject
+    lateinit var biometricLockRepository: BiometricLockRepository
+
     private var binding: ActivityMainBinding? = null
 
     private lateinit var drawerToggle: ActionBarDrawerToggle
 
     private var isSessionExpiredHandled = false
 
+    private lateinit var biometricPromptManager: BiometricPromptManager
+
+    private var isBiometricUnlocked = true
+
+    private var biometricPromptVisible = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding?.root)
+
+        setupBiometricLock(savedInstanceState)
 
         setupActionBar()
 
@@ -78,6 +94,214 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                 insets
             }
         }
+    }
+
+    private fun setupBiometricLock(
+        savedInstanceState: Bundle?
+    ) {
+
+        biometricPromptManager =
+            BiometricPromptManager(this)
+
+        val biometricEnabled =
+            biometricLockRepository.isEnabled()
+
+        val requireBiometricOnStart =
+            intent.getBooleanExtra(
+                EXTRA_REQUIRE_BIOMETRIC_ON_START,
+                false
+            )
+
+        isBiometricUnlocked =
+            if (!biometricEnabled) {
+
+                true
+
+            } else {
+
+                savedInstanceState
+                    ?.getBoolean(
+                        STATE_BIOMETRIC_UNLOCKED
+                    )
+                    ?: !requireBiometricOnStart
+            }
+
+        binding
+            ?.biometricUnlockButton
+            ?.setOnClickListener {
+
+                if (!biometricPromptVisible) {
+                    showBiometricPrompt()
+                }
+            }
+
+        binding
+            ?.biometricLogoutButton
+            ?.setOnClickListener {
+
+                lifecycleScope.launch {
+
+                    logoutUseCase()
+
+                    openAuthActivity()
+                }
+            }
+
+        renderBiometricLockState()
+    }
+
+    private fun showBiometricPrompt() {
+
+        if (!biometricLockRepository.isEnabled()) {
+            unlockBiometricUi()
+            return
+        }
+
+        if (biometricPromptVisible) {
+            return
+        }
+
+        lockBiometricUi()
+
+        biometricPromptVisible = true
+
+        binding
+            ?.biometricLockMessageTextView
+            ?.text =
+            "Authenticate to access MyNotes."
+
+        biometricPromptManager.authenticate(
+            title = "Unlock MyNotes",
+            subtitle =
+                "Use your biometric to access the app.",
+            onSuccess = {
+
+                biometricPromptVisible = false
+
+                unlockBiometricUi()
+            },
+            onError = { errorCode, errorMessage ->
+
+                biometricPromptVisible = false
+
+                val message =
+                    when (errorCode) {
+
+                        BiometricPrompt.ERROR_LOCKOUT,
+                        BiometricPrompt.ERROR_LOCKOUT_PERMANENT ->
+                            "Biometric authentication is temporarily unavailable."
+
+                        BiometricPrompt.ERROR_NEGATIVE_BUTTON,
+                        BiometricPrompt.ERROR_USER_CANCELED,
+                        BiometricPrompt.ERROR_CANCELED ->
+                            "MyNotes remains locked."
+
+                        else ->
+                            errorMessage.toString()
+                    }
+
+                lockBiometricUi(message)
+            }
+        )
+    }
+
+    private fun lockBiometricUi(
+        message: String =
+            "Biometric authentication is required."
+    ) {
+
+        isBiometricUnlocked = false
+
+        binding
+            ?.biometricLockMessageTextView
+            ?.text =
+            message
+
+        binding
+            ?.biometricLockOverlay
+            ?.visibility =
+            View.VISIBLE
+
+        binding
+            ?.drawerLayout
+            ?.closeDrawers()
+
+        binding
+            ?.drawerLayout
+            ?.setDrawerLockMode(
+                DrawerLayout.LOCK_MODE_LOCKED_CLOSED
+            )
+    }
+
+    private fun unlockBiometricUi() {
+
+        isBiometricUnlocked = true
+
+        binding
+            ?.biometricLockOverlay
+            ?.visibility =
+            View.GONE
+
+        binding
+            ?.drawerLayout
+            ?.setDrawerLockMode(
+                DrawerLayout.LOCK_MODE_UNLOCKED
+            )
+    }
+
+    private fun renderBiometricLockState() {
+
+        if (
+            !biometricLockRepository.isEnabled() ||
+            isBiometricUnlocked
+        ) {
+            unlockBiometricUi()
+        } else {
+            lockBiometricUi()
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        if (!biometricLockRepository.isEnabled()) {
+
+            unlockBiometricUi()
+            return
+        }
+
+        if (
+            !isBiometricUnlocked &&
+            !biometricPromptVisible
+        ) {
+            showBiometricPrompt()
+        }
+    }
+
+    override fun onStop() {
+
+        if (
+            biometricLockRepository.isEnabled() &&
+            !isChangingConfigurations &&
+            !isFinishing &&
+            !biometricPromptVisible
+        ) {
+            lockBiometricUi()
+        }
+
+        super.onStop()
+    }
+
+    override fun onSaveInstanceState(
+        outState: Bundle
+    ) {
+
+        outState.putBoolean(
+            STATE_BIOMETRIC_UNLOCKED,
+            isBiometricUnlocked
+        )
+
+        super.onSaveInstanceState(outState)
     }
 
     private fun setupActionBar() {
@@ -138,14 +362,29 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
                         R.drawable.ic_back
                     )
                 }
+                drawerToggle.isDrawerIndicatorEnabled = false
 
-                drawerToggle.isDrawerIndicatorEnabled =
-                    false
+                binding?.toolbar?.setNavigationOnClickListener {
+                        onBackPressedDispatcher
+                            .onBackPressed()
+                    }
+            }
 
-                binding
-                    ?.toolbar
-                    ?.setNavigationOnClickListener {
+            R.id.biometricLockFragment -> {
 
+                supportActionBar?.apply {
+                    title = "Biometric lock"
+
+                    setDisplayHomeAsUpEnabled(true)
+                    setHomeButtonEnabled(true)
+
+                    setHomeAsUpIndicator(
+                        R.drawable.ic_back
+                    )
+                }
+                drawerToggle.isDrawerIndicatorEnabled = false
+
+                binding?.toolbar?.setNavigationOnClickListener {
                         onBackPressedDispatcher
                             .onBackPressed()
                     }
@@ -324,5 +563,10 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         } else {
             drawerToggle.syncState()
         }
+    }
+
+    companion object {
+        const val EXTRA_REQUIRE_BIOMETRIC_ON_START = "require_biometric_on_start"
+        private const val STATE_BIOMETRIC_UNLOCKED = "biometric_unlocked"
     }
 }

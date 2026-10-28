@@ -1,3 +1,4 @@
+
 package com.example.todoapp.data.device.local
 
 import android.content.Context
@@ -11,11 +12,8 @@ import javax.inject.Singleton
 class TrustedDeviceStorage @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
-
     private val masterKey: MasterKey by lazy {
-        MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
+        MasterKey.Builder(context).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build()
     }
 
     private val prefs by lazy {
@@ -28,63 +26,53 @@ class TrustedDeviceStorage @Inject constructor(
         )
     }
 
-    fun saveEnrollment(
-        userId: String,
-        deviceId: String,
-        keyAlias: String
-    ) {
+    fun saveEnrollment(userId: String, deviceId: String, keyAlias: String) {
+        require(userId.isNotBlank() && deviceId.isNotBlank() && keyAlias.isNotBlank())
         prefs.edit()
-            .putString(KEY_USER_ID, userId)
-            .putString(KEY_DEVICE_ID, deviceId)
-            .putString(KEY_ALIAS, keyAlias)
-            .putBoolean(KEY_DEVICE_BOUND, false)
+            .putString(deviceIdKey(userId), deviceId)
+            .putString(keyAliasKey(userId), keyAlias)
             .apply()
     }
 
-    fun markBound() {
+    fun getDeviceId(userId: String): String? = prefs.getString(deviceIdKey(userId), null)
+
+    fun getKeyAlias(userId: String): String? = prefs.getString(keyAliasKey(userId), null)
+
+    fun hasEnrollment(userId: String): Boolean {
+        return !getDeviceId(userId).isNullOrBlank() && !getKeyAlias(userId).isNullOrBlank()
+    }
+
+    fun clearEnrollment(userId: String) {
+        prefs.edit().remove(deviceIdKey(userId)).remove(keyAliasKey(userId)).apply()
+    }
+
+    fun beginSession(userId: String) {
+        require(userId.isNotBlank())
         prefs.edit()
-            .putBoolean(KEY_DEVICE_BOUND, true)
+            .putString(KEY_SESSION_USER_ID, userId)
+            .putBoolean(KEY_SESSION_BOUND, false)
             .apply()
     }
 
-    fun markUnbound() {
-        prefs.edit()
-            .putBoolean(KEY_DEVICE_BOUND, false)
-            .apply()
+    fun getSessionUserId(): String? = prefs.getString(KEY_SESSION_USER_ID, null)
+
+    fun isSessionBound(): Boolean = prefs.getBoolean(KEY_SESSION_BOUND, false)
+
+    fun setSessionBound(userId: String, bound: Boolean) {
+        check(getSessionUserId() == userId) { "Trusted Device session user mismatch" }
+        prefs.edit().putBoolean(KEY_SESSION_BOUND, bound).apply()
     }
 
-    fun getUserId(): String? {
-        return prefs.getString(KEY_USER_ID, null)
+    fun clearSession() {
+        prefs.edit().remove(KEY_SESSION_USER_ID).remove(KEY_SESSION_BOUND).apply()
     }
 
-    fun getDeviceId(): String? {
-        return prefs.getString(KEY_DEVICE_ID, null)
-    }
-
-    fun getKeyAlias(): String? {
-        return prefs.getString(KEY_ALIAS, null)
-    }
-
-    fun isDeviceBound(): Boolean {
-        return prefs.getBoolean(KEY_DEVICE_BOUND, false)
-    }
-
-    fun hasEnrollment(): Boolean {
-        return !getUserId().isNullOrBlank() &&
-                !getDeviceId().isNullOrBlank() &&
-                !getKeyAlias().isNullOrBlank()
-    }
-
-    fun clear() {
-        prefs.edit().clear().apply()
-    }
+    private fun deviceIdKey(userId: String) = "user_${userId}_device_id"
+    private fun keyAliasKey(userId: String) = "user_${userId}_key_alias"
 
     private companion object {
         const val PREFS_NAME = "trusted_device_state"
-
-        const val KEY_USER_ID = "user_id"
-        const val KEY_DEVICE_ID = "device_id"
-        const val KEY_ALIAS = "key_alias"
-        const val KEY_DEVICE_BOUND = "device_bound"
+        const val KEY_SESSION_USER_ID = "session_user_id"
+        const val KEY_SESSION_BOUND = "session_bound"
     }
 }
